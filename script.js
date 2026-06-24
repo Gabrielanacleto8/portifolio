@@ -43,15 +43,7 @@ const skillObserver = new IntersectionObserver((entries) => {
 
 document.querySelectorAll('.skills-grid').forEach(el => skillObserver.observe(el));
 
-// ===== CONTACT FORM =====
-const form = document.getElementById('contactForm');
-const formNote = document.getElementById('formNote');
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  formNote.textContent = '✓ Mensagem enviada! Entrarei em contato em breve.';
-  form.reset();
-  setTimeout(() => formNote.textContent = '', 5000);
-});
+
 
 // ===== YEAR =====
 document.getElementById('year').textContent = new Date().getFullYear();
