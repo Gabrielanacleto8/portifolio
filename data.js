@@ -17,11 +17,15 @@ export const perfil = {
     'Tenho experiência em suporte, análise de sistemas e documentação de processos — uma base que me ajuda a entender o problema antes de escrever a primeira linha de código. Venho aprimorando continuamente meus conhecimentos em desenvolvimento de software.',
     'Busco evoluir tecnicamente, explorar novas tecnologias e contribuir com soluções eficientes, escaláveis e de qualidade.',
   ],
+  // frase de uma linha usada no cartão de perfil do LinkedIn
+  headline: 'Desenvolvedor Júnior · Estudante de Engenharia de Software · Desenvolvimento e manutenção de sistemas',
   email: 'bifarias2014@gmail.com',
   github: 'https://github.com/Gabrielanacleto8',
   githubUser: 'Gabrielanacleto8',
   linkedin: 'https://www.linkedin.com/in/gabriel-anacleto-01a98613b/',
   linkedinUser: 'in/gabriel-anacleto',
+  // usado pelo badge oficial do LinkedIn (a parte final da URL do perfil)
+  linkedinVanity: 'gabriel-anacleto-01a98613b',
   localizacao: 'Brasil · Remoto ou presencial',
 };
 
@@ -51,15 +55,15 @@ export const trajetoria = [
 
 // Cada habilidade usa:
 //   logo:  chave de logos.js (marca oficial, ex.: 'javascript')
-//   icone: chave de ícone de traço do script.js, quando não existe marca
-//   nivel: 'solido' | 'praticando' | 'estudando'
+//   icone: chave de ícone de traço do icones.js, quando não existe marca
+//   nivel: anotação sua para se organizar — não aparece na interface
 export const habilidades = [
   {
     grupo: 'Desenvolvimento',
     icone: 'code',
     itens: [
-      { nome: 'JavaScript', logo: 'javascript', nivel: 'praticando' },
-      { nome: 'Python',     logo: 'python',     nivel: 'praticando' },
+      { nome: 'JavaScript', logo: 'javascript', nivel: 'solido' },
+      { nome: 'Python',     logo: 'python',     nivel: 'solido' },
       { nome: 'HTML5',      logo: 'html5',      nivel: 'solido' },
       { nome: 'CSS3',       logo: 'css3',       nivel: 'solido' },
       { nome: 'SQL',        icone: 'banco',     nivel: 'praticando' },
@@ -73,7 +77,6 @@ export const habilidades = [
       { nome: 'Análise de Requisitos',     icone: 'requisitos', nivel: 'solido' },
       { nome: 'Manutenção de Sistemas',    icone: 'tool',       nivel: 'solido' },
       { nome: 'Documentação de Processos', icone: 'documento',  nivel: 'solido' },
-      { nome: 'Testes & Homologação',      icone: 'bug',        nivel: 'praticando' },
       { nome: 'Suporte & Atendimento',     icone: 'suporte',    nivel: 'solido' },
     ],
   },
@@ -81,13 +84,33 @@ export const habilidades = [
     grupo: 'Ferramentas',
     icone: 'tool',
     itens: [
-      { nome: 'Git',      logo: 'git',               nivel: 'praticando' },
-      { nome: 'GitHub',   logo: 'github',            nivel: 'praticando' },
-      { nome: 'Linux',    logo: 'linux',             nivel: 'praticando' },
+      { nome: 'Git',      logo: 'git',               nivel: 'solido' },
+      { nome: 'GitHub',   logo: 'github',            nivel: 'solido' },
+      { nome: 'Linux',    logo: 'linux',             nivel: 'solido' },
       { nome: 'VS Code',  logo: 'visualstudiocode',  nivel: 'solido' },
       { nome: 'Postman',  logo: 'postman',           nivel: 'estudando' },
     ],
   },
+];
+
+// -------------------------------------------------------------
+//  FOTOS
+//  Galeria de eventos, estudos e bastidores.
+//
+//  Para adicionar: coloque o arquivo em assets/fotos/ e acrescente
+//  uma entrada aqui. As categorias da barra lateral são montadas a
+//  partir do campo "categoria" — não precisa cadastrar em outro lugar.
+//
+//  Exemplo:
+//  {
+//    arquivo: 'assets/fotos/meetup-js.jpg',
+//    titulo: 'Meetup de JavaScript',
+//    descricao: 'Primeiro meetup presencial, falando sobre APIs REST.',
+//    categoria: 'Eventos',
+//    data: 'Março de 2026',
+//  },
+// -------------------------------------------------------------
+export const fotos = [
 ];
 
 // -------------------------------------------------------------
