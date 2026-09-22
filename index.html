@@ -1,321 +1,56 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Portfólio | Analista de Sistemas</title>
+  <meta name="description" content="Gabriel Anacleto — Desenvolvedor Júnior e estudante de Engenharia de Software. Desenvolvimento e manutenção de sistemas, análise de requisitos e implementação de soluções." />
+  <meta name="theme-color" content="#0b0b12" />
+  <title>Gabriel Anacleto — Desenvolvedor Júnior</title>
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%230a84ff'/><text x='50' y='68' font-size='52' font-family='Helvetica,Arial' font-weight='bold' fill='white' text-anchor='middle'>GA</text></svg>" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+
+  <script>
+    // Aplica o tema salvo antes da primeira pintura (evita "flash" branco)
+    try {
+      var t = localStorage.getItem('ga-theme');
+      if (!t) t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  </script>
 </head>
 <body>
+  <div class="wallpaper" aria-hidden="true">
+    <div class="wp-blob wp-blob-1"></div>
+    <div class="wp-blob wp-blob-2"></div>
+    <div class="wp-blob wp-blob-3"></div>
+    <div class="wp-grain"></div>
+  </div>
 
-  <!-- NAV -->
-  <nav class="nav" id="nav">
-    <div class="nav-inner">
-      <span class="nav-logo">dev<span class="accent">.</span></span>
-      <button class="nav-toggle" id="navToggle" aria-label="Menu">
-        <span></span><span></span><span></span>
-      </button>
-      <ul class="nav-links" id="navLinks">
-        <li><a href="#sobre">Sobre</a></li>
-        <li><a href="#habilidades">Habilidades</a></li>
-        <li><a href="#projetos">Projetos</a></li>
-        <li><a href="#contato">Contato</a></li>
-      </ul>
+  <div id="root">
+    <div class="boot">
+      <div class="boot-logo">GA</div>
+      <div class="boot-bar"><span></span></div>
     </div>
-  </nav>
+  </div>
 
-  <!-- HERO -->
-  <section class="hero" id="inicio">
-    <div class="hero-bg-grid"></div>
-    <div class="container hero-content">
-      <p class="hero-eyebrow"><span class="dot"></span> Disponível para oportunidades</p>
-      <h1 class="hero-title">
-        Olá, sou <br />
-        <span class="hero-name">Gabriel Anacleto</span>
-      </h1>
-      <p class="hero-sub">
-        Estudante de Desenvolvimento de Sistemas &amp; Analista de Sistemas.<br />
-        Atualmente atuo como Analista de Sistemas, tendo iniciado minha trajetória em suporte técnico e sendo promovido internamente. Estou em transição para a área de desenvolvimento de software, buscando oportunidades para aplicar e expandir meus conhecimento.<br />
+  <noscript>
+    <div class="noscript">
+      <h1>Gabriel Anacleto</h1>
+      <p>Desenvolvedor Júnior · Estudante de Engenharia de Software</p>
+      <p>Este portfólio funciona como uma área de trabalho interativa e precisa de JavaScript. Ative o JavaScript para navegar pelos aplicativos.</p>
+      <p>
+        <a href="mailto:bifarias2014@gmail.com">bifarias2014@gmail.com</a> ·
+        <a href="https://github.com/Gabrielanacleto8">GitHub</a> ·
+        <a href="https://www.linkedin.com/in/gabriel-anacleto-01a98613b/">LinkedIn</a>
       </p>
-      <div class="hero-actions">
-        <a href="#projetos" class="btn btn-primary">Ver projetos</a>
-        <a href="#contato" class="btn btn-ghost">Entre em contato</a>
-      </div>
-      <div class="hero-stack">
-        <span class="tag">Python</span>
-        <span class="tag">JavaScript</span>
-        <span class="tag">SQL</span>
-        <span class="tag">Linux</span>
-        <span class="tag">QA</span>
-        <span class="tag">Análise de Requisitos</span>
-      </div>
     </div>
-    <div class="hero-scroll">
-      <span>scroll</span>
-      <div class="scroll-line"></div>
-    </div>
-  </section>
+  </noscript>
 
-  <!-- SOBRE -->
-  <section class="section" id="sobre">
-    <div class="container">
-      <p class="section-eyebrow">Sobre mim</p>
-      <div class="sobre-grid">
-        <div class="sobre-text">
-          <h2 class="section-title">Da infraestrutura ao código</h2>
-          <p>
-            Minha trajetória em tecnologia começou no suporte técnico, onde aprendi
-            a resolver problemas rapidamente e a entender as necessidades reais dos usuários.
-            Esse olhar prático foi o que me levou à promoção para <strong>Analista de Sistemas</strong>.
-          </p>
-          <p>
-            Hoje concentro meu trabalho em garantir que softwares funcionem da forma
-            certa analisando requisitos antes do desenvolvimento, testando sistemas
-            em ambiente de homologação e documentando falhas com precisão para que os
-            times de desenvolvimento possam corrigi-las com agilidade.
-          </p>
-          <p>
-            Paralelamente, estou construindo minha base como desenvolvedor, estudando
-            <strong>Python</strong> e <strong>Go</strong> para backend e
-            <strong>JavaScript / HTML / CSS</strong> para frontend.
-          </p>
-          <div class="timeline">
-            <div class="tl-item">
-              <div class="tl-dot"></div>
-              <div>
-                <span class="tl-year">Início</span>
-                <p class="tl-desc">Suporte Técnico — primeiro contato com TI e resolução de problemas</p>
-              </div>
-            </div>
-            <div class="tl-item">
-              <div class="tl-dot"></div>
-              <div>
-                <span class="tl-year">Promoção</span>
-                <p class="tl-desc">Analista de Sistemas — análise de requisitos, testes e homologação</p>
-              </div>
-            </div>
-            <div class="tl-item">
-              <div class="tl-dot accent-dot"></div>
-              <div>
-                <span class="tl-year">Agora</span>
-                <p class="tl-desc">Estudante de Desenvolvimento de Sistemas — Python, Go, JS</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="sobre-card">
-          <div class="profile-avatar">GA</div>
-          <div class="profile-info">
-            <p class="profile-name">Gabriel Anacleto</p>
-            <p class="profile-role">Analista de Sistemas</p>
-          </div>
-          <div class="profile-stats">
-            <div class="stat">
-              <span class="stat-num">1+</span>
-              <span class="stat-label">Anos em TI</span>
-            </div>
-            <div class="stat">
-              <span class="stat-num">5+</span>
-              <span class="stat-label">Tecnologias</span>
-            </div>
-            <div class="stat">
-              <span class="stat-num">100%</span>
-              <span class="stat-label">Dedicação</span>
-            </div>
-          </div>
-          <a href="#contato" class="btn btn-primary" style="width:100%;text-align:center;">Vamos conversar</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- HABILIDADES -->
-  <section class="section section-alt" id="habilidades">
-    <div class="container">
-      <p class="section-eyebrow">Habilidades</p>
-      <h2 class="section-title">O que eu domino</h2>
-      <div class="skills-grid">
-
-        <div class="skill-group">
-          <p class="skill-group-label">Análise &amp; QA</p>
-          <div class="skill-item">
-            <div class="skill-header">
-              <span>Análise de Requisitos</span><span class="skill-pct">85%</span>
-            </div>
-            <div class="skill-bar"><div class="skill-fill" data-w="85"></div></div>
-          </div>
-          <div class="skill-item">
-            <div class="skill-header">
-              <span>Testes de Software (QA)</span><span class="skill-pct">70%</span>
-            </div>
-            <div class="skill-bar"><div class="skill-fill" data-w="70"></div></div>
-          </div>
-          <div class="skill-item">
-            <div class="skill-header">
-              <span>Identificação de Falhas</span><span class="skill-pct">80%</span>
-            </div>
-            <div class="skill-bar"><div class="skill-fill" data-w="80"></div></div>
-          </div>
-          <div class="skill-item">
-            <div class="skill-header">
-              <span>Controle de sistemas terceirizados</span><span class="skill-pct">80%</span>
-            </div>
-            <div class="skill-bar"><div class="skill-fill" data-w="80"></div></div>
-          </div>
-        </div>
-
-        <div class="skill-group">
-          <p class="skill-group-label">Backend</p>
-          <div class="skill-item">
-            <div class="skill-header">
-              <span>Python</span><span class="skill-pct">50%</span>
-            </div>
-            <div class="skill-bar"><div class="skill-fill" data-w="50"></div></div>
-          </div>
-          <div class="skill-item">
-            <div class="skill-header">
-              <span>SQL</span><span class="skill-pct">20%</span>
-            </div>
-            <div class="skill-bar"><div class="skill-fill" data-w="20"></div></div>
-          </div>
-        </div>
-
-        <div class="skill-group">
-          <p class="skill-group-label">Frontend</p>
-          <div class="skill-item">
-            <div class="skill-header">
-              <span>HTML &amp; CSS</span><span class="skill-pct">65%</span>
-            </div>
-            <div class="skill-bar"><div class="skill-fill" data-w="65"></div></div>
-          </div>
-          <div class="skill-item">
-            <div class="skill-header">
-              <span>JavaScript</span><span class="skill-pct">55%</span>
-            </div>
-            <div class="skill-bar"><div class="skill-fill" data-w="55"></div></div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- PROJETOS -->
-  <section class="section" id="projetos">
-    <div class="container">
-      <p class="section-eyebrow">Projetos</p>
-      <h2 class="section-title">O que estou construindo</h2>
-      <div class="projects-grid">
-
-        <div class="project-card featured">
-          <div class="project-badge">Em desenvolvimento</div>
-          <h3 class="project-title">CRUD Full-Stack</h3>
-          <p class="project-desc">
-            Aplicação CRUD completa em desenvolvimento, explorando integração entre
-            frontend em JavaScript/HTML/CSS e backend com API REST. Foco em boas
-            práticas de código e estrutura de dados.
-          </p>
-          <div class="project-tags">
-            <span class="tag">JavaScript</span>
-            <span class="tag">HTML/CSS</span>
-            <span class="tag">API REST</span>
-          </div>
-          <div class="project-links">
-            <a href="#" class="btn btn-ghost btn-sm">GitHub →</a>
-          </div>
-        </div>
-
-        <div class="project-card">
-          <div class="project-badge badge-qa">QA</div>
-          <h3 class="project-title">Plano de Testes — Sistema ERP</h3>
-          <p class="project-desc">
-            Documentação de casos de teste, cenários de homologação e relatório de
-            falhas para sistema ERP em ambiente controlado.
-          </p>
-          <div class="project-tags">
-            <span class="tag">QA</span>
-            <span class="tag">Homologação</span>
-            <span class="tag">Documentação</span>
-          </div>
-          <div class="project-links">
-            <a href="https://github.com/Gabrielanacleto8" class="btn btn-ghost btn-sm">Ver detalhes →</a>
-          </div>
-        </div>
-
-        <div class="project-card">
-          <div class="project-badge badge-study">Estudos</div>
-          <h3 class="project-title">Scripts Python — Automação</h3>
-          <p class="project-desc">
-            Coleção de scripts Python para automação de tarefas repetitivas e
-            manipulação de dados, desenvolvidos durante os estudos.
-          </p>
-          <div class="project-tags">
-            <span class="tag">Python</span>
-            <span class="tag">Automação</span>
-          </div>
-          <div class="project-links">
-            <a href="https://github.com/Gabrielanacleto8" class="btn btn-ghost btn-sm">GitHub →</a>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- CONTATO -->
-  <section class="section section-alt" id="contato">
-    <div class="container">
-      <p class="section-eyebrow">Contato</p>
-      <h2 class="section-title">Vamos conversar</h2>
-      <p class="contato-sub">
-        Aberto a oportunidades, colaborações e trocas de conhecimento.
-      </p>
-      <div class="contato-grid">
-        <div class="contato-links">
-          <a href="mailto:bifarias2014@gmail.com" class="contato-item">
-            <span class="contato-icon">✉</span>
-            <div>
-              <p class="contato-label">E-mail</p>
-              <p class="contato-val">bifarias2014@gmail.com</p>
-            </div>
-          </a>
-          <a href="https://www.linkedin.com/in/gabriel-anacleto-01a98613b/" target="_blank" class="contato-item">
-            <span class="contato-icon">in</span>
-            <div>
-              <p class="contato-label">LinkedIn</p>
-              <p class="contato-val">linkedin.com/in/gabriel-anacleto</p>
-            </div>
-          </a>
-          <a href="https://github.com/Gabrielanacleto8" target="_blank" class="contato-item">
-            <span class="contato-icon">gh</span>
-            <div>
-              <p class="contato-label">GitHub</p>
-              <p class="contato-val">github.com/Gabrielanacleto8</p>
-            </div>
-          </a>
-        </div>
-        <form class="contato-form" id="contactForm">
-          <input type="text" placeholder="Seu nome" required />
-          <input type="email" placeholder="Seu e-mail" required />
-          <textarea rows="4" placeholder="Sua mensagem" required></textarea>
-          <button type="submit" class="btn btn-primary">Enviar mensagem</button>
-          <p class="form-note" id="formNote"></p>
-        </form>
-      </div>
-    </div>
-  </section>
-
- <!-- FOOTER -->
-  <footer class="footer">
-    <div class="container">
-      <p>Feito por <strong>Gabriel Anacleto</strong></p>
-      <p class="footer-year">© <span id="year"></span></p>
-    </div>
-  </footer>
- 
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
