@@ -16,6 +16,8 @@ const html = htm.bind(React.createElement);
    Sobre mim
 --------------------------------------------------------------- */
 export function Sobre() {
+  const [fotoFalhou, setFotoFalhou] = useState(false);
+
   return html`
     <div className="app-conteudo">
       <p className="eyebrow">Quem está por trás do código</p>
@@ -39,7 +41,11 @@ export function Sobre() {
         </div>
 
         <aside className="card-perfil">
-          <div className="avatar">${perfil.iniciais}</div>
+          <div className="avatar">
+            ${perfil.foto && !fotoFalhou
+              ? html`<img src=${perfil.foto} alt=${'Foto de ' + perfil.nome} onError=${() => setFotoFalhou(true)} />`
+              : perfil.iniciais}
+          </div>
           <p className="nome">${perfil.nome}</p>
           <p className="cargo">${perfil.cargo}</p>
           <p className="local">${perfil.localizacao}</p>
@@ -149,6 +155,11 @@ export function Projetos({ abrirApp }) {
         ${projetos.map((p) => html`
           <${CardProjeto} key=${p.id} projeto=${p}
                           onAbrir=${() => abrirApp('projeto', { projeto: p })} />`)}
+        <div className="proj-card proj-reservado">
+          <span className="plus">+</span>
+          <span className="proj-title">Novos projetos em breve</span>
+          <p className="proj-desc">Espaço reservado para os próximos trabalhos.</p>
+        </div>
       </div>
     </div>`;
 }
@@ -220,7 +231,7 @@ export function Terminal() {
       ['cargo', perfil.cargo],
       ['formacao', 'Engenharia de Software'],
       ['foco', 'Desenvolvimento & Manutenção'],
-      ['stack', 'JavaScript · Python · SQL'],
+      ['stack', 'JavaScript · Python · PHP · Laravel · SQL'],
       ['status', 'Aprendendo todo dia'],
     ] },
     { tipo: 'cmd', texto: 'echo $OBJETIVO' },
@@ -268,6 +279,7 @@ export function Contato({ abrirApp }) {
 
   const itens = [
     { ico: 'mail', label: 'E-mail', val: perfil.email, href: 'mailto:' + perfil.email, cor: 'linear-gradient(145deg,#5ab6ff,#0a84ff)' },
+    { ico: 'whatsapp', label: 'WhatsApp', val: perfil.whatsapp, href: perfil.whatsappLink, cor: 'linear-gradient(145deg,#5fe07f,#25a244)' },
     { ico: 'linkedin', label: 'LinkedIn', val: perfil.linkedinUser, app: 'linkedin', cor: 'linear-gradient(145deg,#3b9be8,#0a66c2)' },
     { ico: 'github', label: 'GitHub', val: perfil.githubUser, app: 'github', cor: 'linear-gradient(145deg,#59626d,#23282e)' },
     { ico: 'pin', label: 'Localização', val: perfil.localizacao, cor: 'linear-gradient(145deg,#7d7bee,#4341c4)' },

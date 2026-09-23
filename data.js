@@ -7,6 +7,8 @@
 export const perfil = {
   nome: 'Gabriel Anacleto',
   iniciais: 'GA',
+  // foto do cartão "Sobre mim"; se não carregar, aparecem as iniciais
+  foto: 'assets/fotos/tdc-floripa-selfie.jpg',
   cargo: 'Desenvolvedor Júnior',
   formacao: 'Estudante de Engenharia de Software',
   status: 'Aberto a novas oportunidades',
@@ -20,6 +22,9 @@ export const perfil = {
   // frase de uma linha usada no cartão de perfil do LinkedIn
   headline: 'Desenvolvedor Júnior · Estudante de Engenharia de Software · Desenvolvimento e manutenção de sistemas',
   email: 'bifarias2014@gmail.com',
+  whatsapp: '(47) 99692-8831',
+  // número no formato internacional, usado no link wa.me
+  whatsappLink: 'https://wa.me/5547996928831',
   github: 'https://github.com/Gabrielanacleto8',
   githubUser: 'Gabrielanacleto8',
   linkedin: 'https://www.linkedin.com/in/gabriel-anacleto-01a98613b/',
@@ -64,6 +69,8 @@ export const habilidades = [
     itens: [
       { nome: 'JavaScript', logo: 'javascript', nivel: 'solido' },
       { nome: 'Python',     logo: 'python',     nivel: 'solido' },
+      { nome: 'PHP',        logo: 'php',        nivel: 'praticando' },
+      { nome: 'Laravel',    logo: 'laravel',    nivel: 'praticando' },
       { nome: 'HTML5',      logo: 'html5',      nivel: 'solido' },
       { nome: 'CSS3',       logo: 'css3',       nivel: 'solido' },
       { nome: 'SQL',        icone: 'banco',     nivel: 'praticando' },
@@ -111,6 +118,79 @@ export const habilidades = [
 //  },
 // -------------------------------------------------------------
 export const fotos = [
+  {
+    arquivo: 'assets/fotos/tdc-floripa-selfie.jpg',
+    titulo: 'TDC Floripa 2026',
+    descricao: 'Credenciado e pronto para um dia inteiro de palestras no The Developer\'s Conference.',
+    categoria: 'Eventos',
+    data: 'Julho de 2026',
+  },
+  {
+    arquivo: 'assets/fotos/tdc-floripa-palestra.jpg',
+    titulo: 'Auditório principal',
+    descricao: 'Palestra lotada no palco principal do TDC Floripa.',
+    categoria: 'Eventos',
+    data: 'Julho de 2026',
+  },
+  {
+    arquivo: 'assets/fotos/tdc-floripa-painel.jpg',
+    titulo: '#thedevconf',
+    descricao: 'Painel dos mantenedores e patrocinadores do TDC 2026.',
+    categoria: 'Eventos',
+    data: 'Julho de 2026',
+  },
+  {
+    arquivo: 'assets/fotos/tdc-floripa-trilhas.jpg',
+    titulo: 'Trilhas do evento',
+    descricao: 'Arquitetura Java, Software Security e Quality Engineering de Produto — difícil escolher.',
+    categoria: 'Eventos',
+    data: 'Julho de 2026',
+  },
+  {
+    arquivo: 'assets/fotos/tdc-floripa-notebook.jpg',
+    titulo: 'Documentando entre palestras',
+    descricao: 'Aproveitando o intervalo para atualizar minha documentação profissional.',
+    categoria: 'Bastidores',
+    data: 'Julho de 2026',
+  },
+  {
+    arquivo: 'assets/fotos/tdc-floripa-brinde.jpg',
+    titulo: 'Brinde impresso em 3D',
+    descricao: 'Chaveiro em impressão 3D que ganhei no evento.',
+    categoria: 'Bastidores',
+    data: 'Julho de 2026',
+  },
+  {
+    arquivo: 'assets/fotos/certificado-tdc-software-security.png',
+    titulo: 'Certificado — Trilha Software Security',
+    descricao: 'Participação na Trilha Software Security do TDC 2026 Florianópolis, 8 horas de duração no CentroSul.',
+    categoria: 'Certificações',
+    data: 'Julho de 2026',
+  },
+  {
+    arquivo: 'assets/fotos/aula-neo4j-python.jpg',
+    titulo: 'Neo4j com Python',
+    descricao: 'Aula de banco de dados em grafo: CRUD de nós e relacionamentos no Neo4j usando Python.',
+    categoria: 'Estudos',
+  },
+  {
+    arquivo: 'assets/fotos/lab-leds-protoboard.jpg',
+    titulo: 'LEDs na protoboard',
+    descricao: 'Montagem de circuito com LEDs e resistores no laboratório de eletrônica.',
+    categoria: 'Estudos',
+  },
+  {
+    arquivo: 'assets/fotos/lab-circuito-capacitor.jpg',
+    titulo: 'Circuito RC com botão',
+    descricao: 'Carga e descarga de capacitor acionando um LED por push-button.',
+    categoria: 'Estudos',
+  },
+  {
+    arquivo: 'assets/fotos/lab-osciloscopio-gerador.jpg',
+    titulo: 'Osciloscópio e gerador de sinais',
+    descricao: 'Medições com gerador de funções e osciloscópio na bancada do laboratório.',
+    categoria: 'Estudos',
+  },
 ];
 
 // -------------------------------------------------------------
@@ -121,6 +201,26 @@ export const fotos = [
 //  Ex.: imagens: ['assets/projetos/crud-1.png', 'assets/projetos/crud-2.png']
 // -------------------------------------------------------------
 export const projetos = [
+  {
+    id: 'producao-mecanica',
+    titulo: 'Controle de Produção de Oficina Mecânica',
+    badge: 'Em desenvolvimento',
+    tipo: 'dev',
+    resumo: 'Mede o tempo de produção dos mecânicos e o tempo dos veículos na oficina.',
+    desc: 'Sistema de controle de produção para oficina mecânica que mede duas coisas: o tempo de produção de cada mecânico e o tempo de cada veículo dentro da oficina. Do lado do veículo, acompanha a ordem de serviço do pátio à entrega — quanto tempo passou em serviço, parado no box, aguardando peça ou na sala de montagem — e compara cada serviço com o tempo previsto. Do lado da produção, mostra por período as horas trabalhadas, ociosas e de descanso de cada mecânico.',
+    destaques: [
+      'Linha do tempo da OS mostrando onde foi o tempo do veículo',
+      'Comparativo de previsto x realizado por serviço, com alerta de tempo excedido',
+      'Painel por mecânico com controle de horas, linha do dia e serviços concluídos',
+    ],
+    tags: ['PHP', 'Laravel', 'JavaScript', 'React', 'MySQL'],
+    imagens: [
+      'assets/projetos/producao-mecanica-os.jpg',
+      'assets/projetos/producao-mecanica-mecanico.jpg',
+    ],
+    link: '',
+    linkLabel: '',
+  },
   {
     id: 'crud',
     titulo: 'CRUD Full-Stack',
@@ -133,60 +233,9 @@ export const projetos = [
       'Validação de formulários e tratamento de erros',
       'Estrutura de pastas pensada para crescer sem virar bagunça',
     ],
-    tags: ['JavaScript', 'HTML/CSS', 'API REST', 'SQL'],
-    imagens: [],
+    tags: ['JavaScript', 'Python', 'HTML', 'CSS', 'MySQL', 'Supabase'],
+    imagens: ['assets/projetos/crud-estoque-produtos.png'],
     destaque: true,
-    link: 'https://github.com/Gabrielanacleto8',
-    linkLabel: 'Ver no GitHub',
-  },
-  {
-    id: 'manutencao',
-    titulo: 'Manutenção e Evolução de Sistemas',
-    badge: 'Trabalho atual',
-    tipo: 'dev',
-    resumo: 'Correções, melhorias e novas rotinas em sistemas em produção.',
-    desc: 'Atuação diária no desenvolvimento e na manutenção de sistemas já em produção: investigação de falhas relatadas pelos usuários, correção de bugs, ajustes de regra de negócio e implementação de novas rotinas a partir de requisitos levantados com as áreas.',
-    destaques: [
-      'Levantamento de requisitos junto às áreas de negócio',
-      'Correção de falhas com análise de causa raiz',
-      'Consultas SQL para apuração e correção de dados',
-    ],
-    tags: ['Análise de Requisitos', 'SQL', 'Manutenção', 'Suporte N2'],
-    imagens: [],
-    link: '',
-    linkLabel: '',
-  },
-  {
-    id: 'qa',
-    titulo: 'Plano de Testes — Sistema ERP',
-    badge: 'Qualidade',
-    tipo: 'qa',
-    resumo: 'Casos de teste, homologação e relatórios de falha.',
-    desc: 'Documentação de casos de teste, cenários de homologação e relatórios de falha para um sistema ERP em ambiente controlado, garantindo que cada entrega chegasse ao usuário final já validada.',
-    destaques: [
-      'Casos de teste cobrindo os fluxos críticos do sistema',
-      'Relatórios de falha objetivos, com passos de reprodução',
-      'Acompanhamento das correções até a homologação',
-    ],
-    tags: ['QA', 'Homologação', 'Documentação'],
-    imagens: [],
-    link: 'https://github.com/Gabrielanacleto8',
-    linkLabel: 'Ver detalhes',
-  },
-  {
-    id: 'python',
-    titulo: 'Scripts Python — Automação',
-    badge: 'Estudos',
-    tipo: 'estudo',
-    resumo: 'Automação de tarefas repetitivas e manipulação de dados.',
-    desc: 'Coleção de scripts em Python para automatizar tarefas repetitivas e tratar dados — leitura e escrita de planilhas, organização de arquivos e pequenas rotinas que economizam tempo no dia a dia.',
-    destaques: [
-      'Leitura e tratamento de planilhas e arquivos CSV',
-      'Rotinas de organização automática de arquivos',
-      'Código comentado, pensado também como material de estudo',
-    ],
-    tags: ['Python', 'Automação', 'Dados'],
-    imagens: [],
     link: 'https://github.com/Gabrielanacleto8',
     linkLabel: 'Ver no GitHub',
   },
