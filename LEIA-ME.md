@@ -15,6 +15,8 @@ recurso do portfólio é um "aplicativo".
 | `icones.js` | Ícones da interface e o componente que desenha os logos |
 | `logos.js` | Traçados dos logos das tecnologias (Simple Icons, embutidos) |
 | `style.css` | Todo o visual |
+| `vendor/` | Preact e htm, as duas bibliotecas do site, servidas daqui mesmo |
+| `assets/fontes/` | Inter e JetBrains Mono em woff2 (subconjuntos latinos) |
 | `assets/projetos/` | Imagens dos projetos |
 | `assets/fotos/` | Fotos da galeria (eventos, estudos) |
 
@@ -151,5 +153,38 @@ python3 -m http.server 8000
 São arquivos estáticos — Vercel, Netlify, GitHub Pages ou qualquer hospedagem
 simples, sem build. O `portifolio.json` guarda a regra de rewrite.
 
-React e htm vêm de CDN (`esm.sh`), então é preciso ter internet na primeira
-carga da página.
+Nada é baixado de outro domínio na carga da página: a interface usa
+[Preact](https://preactjs.com) (a mesma API do React em ~4 KB) com
+[htm](https://github.com/developit/htm), ambos em `vendor/`, e as fontes
+ficam em `assets/fontes/`. Só os apps GitHub e LinkedIn acessam a internet,
+e só quando são abertos.
+
+O `<script type="importmap">` do `index.html` liga os nomes curtos usados nos
+`import` (`'preact'`, `'preact/hooks'`, `'htm'`) aos arquivos de `vendor/`.
+Para atualizar o Preact, baixe os arquivos novos de
+`https://cdn.jsdelivr.net/npm/preact@<versão>/dist/preact.module.js` e
+`.../hooks/dist/hooks.module.js` e substitua os de `vendor/`.
+
+### Diferenças do Preact para o React
+
+Os componentes são escritos igual, com duas pegadinhas:
+
+- campos de texto usam `onInput` (no Preact, `onChange` só dispara quando o
+  campo perde o foco);
+- atributos de SVG vão com o nome real, com hífen: `stroke-width`, não
+  `strokeWidth`.
+
+### Desempenho
+
+- Arrastar, redimensionar e a ampliação do Dock escrevem direto no estilo do
+  elemento enquanto o ponteiro se move; o estado só é atualizado ao soltar.
+  Assim nenhum componente re-renderiza a cada movimento.
+- O conteúdo de cada janela só é reconstruído quando o tema ou os dados dela
+  mudam — mover ou focar a janela não toca no app.
+- Janelas minimizadas, ou escondidas atrás da do topo no celular, continuam
+  montadas: o que foi digitado no Contato não se perde, e GitHub e LinkedIn
+  não buscam tudo de novo.
+- O app GitHub guarda a resposta por 10 minutos na aba (`sessionStorage`),
+  poupando o limite de 60 requisições por hora.
+- As manchas do papel de parede são gradientes radiais, não `filter: blur()`,
+  que era o efeito mais caro da página.

@@ -4,13 +4,14 @@
 //  título, arrastar, minimizar) fica no gerenciador, em script.js.
 // =============================================================
 
-import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.3.1';
-import htm from 'https://esm.sh/htm@3.1.1';
+import { h, Fragment } from 'preact';
+import { useState, useEffect, useRef } from 'preact/hooks';
+import htm from 'htm';
 
 import { perfil, trajetoria, habilidades, projetos, fotos } from './data.js';
 import { Ico, LogoMarca } from './icones.js';
 
-const html = htm.bind(React.createElement);
+const html = htm.bind(h);
 
 /* ---------------------------------------------------------------
    Sobre mim
@@ -77,7 +78,7 @@ export function Habilidades({ tema }) {
         </button>
         ${habilidades.map((g) => html`
           <button key=${g.grupo} className=${grupo === g.grupo ? 'on' : ''} onClick=${() => setGrupo(g.grupo)}>
-            ${React.createElement(Ico[g.icone], { size: 15 })} ${g.grupo}
+            ${h(Ico[g.icone], { size: 15 })} ${g.grupo}
           </button>`)}
       </aside>
 
@@ -91,7 +92,7 @@ export function Habilidades({ tema }) {
                   <div className="app-icon">
                     ${it.logo
                       ? html`<${LogoMarca} chave=${it.logo} tema=${tema} />`
-                      : React.createElement(Ico[it.icone], { size: 27 })}
+                      : h(Ico[it.icone], { size: 27 })}
                   </div>
                   <p className="app-name">${it.nome}</p>
                 </div>`)}
@@ -112,7 +113,7 @@ function Shot({ projeto, className }) {
     <div className=${'shot ' + (className || '')}>
       ${temImagem
         ? html`<img src=${projeto.imagens[0]} alt=${'Captura do projeto ' + projeto.titulo}
-                     loading="lazy" onError=${() => setErro(true)} />`
+                     loading="lazy" decoding="async" onError=${() => setErro(true)} />`
         : html`
           <div className="shot-empty">
             <span className="plus">+</span>
@@ -177,17 +178,17 @@ export function Projeto({ params }) {
     <div className="app-conteudo">
       ${imagens.length > 0
         ? html`
-          <${React.Fragment}>
+          <${Fragment}>
             <div className="ql-shot">
               <img src=${imagens[i]} alt=${'Imagem ' + (i + 1) + ' do projeto ' + projeto.titulo}
-                   onError=${() => setErro(true)} />
+                   decoding="async" onError=${() => setErro(true)} />
             </div>
             ${imagens.length > 1 && html`
               <div className="ql-thumbs">
                 ${imagens.map((src, n) => html`
                   <button key=${src} className=${n === i ? 'on' : ''} onClick=${() => setI(n)}
                           aria-label=${'Ver imagem ' + (n + 1)}>
-                    <img src=${src} alt="" />
+                    <img src=${src} alt="" loading="lazy" decoding="async" />
                   </button>`)}
               </div>`}
           <//>`
@@ -267,7 +268,10 @@ export function Terminal() {
 --------------------------------------------------------------- */
 export function Contato({ abrirApp }) {
   const [form, setForm] = useState({ nome: '', assunto: '', msg: '' });
-  const mudar = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+  const mudar = (k) => (e) => {
+    const valor = e.target.value;
+    setForm((f) => ({ ...f, [k]: valor }));
+  };
 
   const enviar = (e) => {
     e.preventDefault();
@@ -297,9 +301,9 @@ export function Contato({ abrirApp }) {
         <div className="contato-lista">
           ${itens.map((it) => {
             const conteudo = html`
-              <${React.Fragment}>
+              <${Fragment}>
                 <span className="contato-ico" style=${{ background: it.cor }}>
-                  ${React.createElement(Ico[it.ico], { size: 17 })}
+                  ${h(Ico[it.ico], { size: 17 })}
                 </span>
                 <span>
                   <span className="contato-label">${it.label}</span>
@@ -322,15 +326,15 @@ export function Contato({ abrirApp }) {
           <form onSubmit=${enviar}>
             <div className="field">
               <label htmlFor="c-nome">Seu nome</label>
-              <input id="c-nome" value=${form.nome} onChange=${mudar('nome')} placeholder="Como posso te chamar?" />
+              <input id="c-nome" value=${form.nome} onInput=${mudar('nome')} placeholder="Como posso te chamar?" />
             </div>
             <div className="field">
               <label htmlFor="c-assunto">Assunto</label>
-              <input id="c-assunto" value=${form.assunto} onChange=${mudar('assunto')} placeholder="Oportunidade, projeto, dúvida..." />
+              <input id="c-assunto" value=${form.assunto} onInput=${mudar('assunto')} placeholder="Oportunidade, projeto, dúvida..." />
             </div>
             <div className="field">
               <label htmlFor="c-msg">Mensagem</label>
-              <textarea id="c-msg" rows="4" value=${form.msg} onChange=${mudar('msg')} placeholder="Escreva sua mensagem..."></textarea>
+              <textarea id="c-msg" rows="4" value=${form.msg} onInput=${mudar('msg')} placeholder="Escreva sua mensagem..."></textarea>
             </div>
             <button className="btn btn-primary" type="submit" style=${{ justifyContent: 'center' }}>
               Enviar <${Ico.send} size=${15} />
@@ -449,6 +453,32 @@ export function LinkedIn({ tema }) {
 --------------------------------------------------------------- */
 const GH_API = 'https://api.github.com';
 
+// Cache por aba: reabrir a janela (ou reorganizar a mesa, que remonta o
+// conteúdo) não refaz as requisições nem gasta o limite de 60/h.
+const GH_CACHE = 'ga-github';
+const GH_TTL = 10 * 60 * 1000;
+let ghMemo = null;
+
+function lerCacheGh() {
+  if (ghMemo) return ghMemo;
+  try {
+    const c = JSON.parse(sessionStorage.getItem(GH_CACHE));
+    if (c && Date.now() - c.t < GH_TTL) return (ghMemo = c);
+  } catch (e) {}
+  return null;
+}
+
+function guardarCacheGh(dados, repos) {
+  // só o que a janela mostra: a resposta completa do GitHub é ~20x maior
+  const d = (({ avatar_url, name, login, bio, public_repos, followers, created_at }) =>
+    ({ avatar_url, name, login, bio, public_repos, followers, created_at }))(dados);
+  const r = repos.map(({ id, name, html_url, description, language, stargazers_count, updated_at }) =>
+    ({ id, name, html_url, description, language, stargazers_count, updated_at }));
+  ghMemo = { t: Date.now(), dados: d, repos: r };
+  try { sessionStorage.setItem(GH_CACHE, JSON.stringify(ghMemo)); } catch (e) {}
+  return ghMemo;
+}
+
 // cores oficiais das linguagens, para o pontinho ao lado do repositório
 const COR_LINGUAGEM = {
   JavaScript: '#f1e05a', Python: '#3572A5', HTML: '#e34c26', CSS: '#563d7c',
@@ -470,29 +500,32 @@ function CartaoGitHubEstatico() {
 }
 
 export function GitHub() {
-  const [dados, setDados] = useState(null);
-  const [repos, setRepos] = useState([]);
-  const [estado, setEstado] = useState('carregando'); // carregando | pronto | indisponivel
+  const [gh, setGh] = useState(lerCacheGh); // { dados, repos } | null
+  const [estado, setEstado] = useState(gh ? 'pronto' : 'carregando'); // carregando | pronto | indisponivel
 
   useEffect(() => {
+    if (gh) return;
     let vivo = true;
     const usuario = perfil.githubUser;
+    const cab = { headers: { Accept: 'application/vnd.github+json' } };
 
     Promise.all([
-      fetch(`${GH_API}/users/${usuario}`).then((r) => (r.ok ? r.json() : Promise.reject(r.status))),
-      fetch(`${GH_API}/users/${usuario}/repos?sort=updated&per_page=8`)
+      fetch(`${GH_API}/users/${usuario}`, cab).then((r) => (r.ok ? r.json() : Promise.reject(r.status))),
+      fetch(`${GH_API}/users/${usuario}/repos?sort=updated&per_page=8`, cab)
         .then((r) => (r.ok ? r.json() : [])),
     ])
       .then(([perfilGh, lista]) => {
         if (!vivo) return;
-        setDados(perfilGh);
-        setRepos(Array.isArray(lista) ? lista : []);
+        setGh(guardarCacheGh(perfilGh, Array.isArray(lista) ? lista : []));
         setEstado('pronto');
       })
       .catch(() => vivo && setEstado('indisponivel'));
 
     return () => { vivo = false; };
   }, []);
+
+  const dados = gh && gh.dados;
+  const repos = gh ? gh.repos : [];
 
   const data = (iso) => new Date(iso).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
 
@@ -507,7 +540,7 @@ export function GitHub() {
       ${estado === 'indisponivel' && html`<${CartaoGitHubEstatico} />`}
 
       ${estado === 'pronto' && dados && html`
-        <${React.Fragment}>
+        <${Fragment}>
           <header className="gh-topo">
             <img className="gh-avatar" src=${dados.avatar_url} alt=${'Foto de ' + (dados.name || dados.login)} />
             <div className="gh-id">
@@ -598,10 +631,10 @@ function Visor({ lista, indice, aoFechar, aoTrocar }) {
       <div className="visor-quadro" onClick=${(e) => e.stopPropagation()}>
         ${erro
           ? html`<div className="visor-erro">Não encontrei <code>${foto.arquivo}</code></div>`
-          : html`<img src=${foto.arquivo} alt=${foto.titulo} onError=${() => setErro(true)} />`}
+          : html`<img src=${foto.arquivo} alt=${foto.titulo} decoding="async" onError=${() => setErro(true)} />`}
 
         ${lista.length > 1 && html`
-          <${React.Fragment}>
+          <${Fragment}>
             <button className="visor-seta esq" onClick=${() => aoTrocar(-1)} aria-label="Foto anterior">
               <${Ico.anterior} size=${20} />
             </button>

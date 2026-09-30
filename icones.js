@@ -2,16 +2,16 @@
 //  Ícones da interface e logos das tecnologias
 // =============================================================
 
-import React from 'https://esm.sh/react@18.3.1';
-import htm from 'https://esm.sh/htm@3.1.1';
+import { h } from 'preact';
+import htm from 'htm';
 import { logos } from './logos.js';
 
-const html = htm.bind(React.createElement);
+const html = htm.bind(h);
 
 const svg = (d, extra = {}) => (props = {}) => html`
   <svg viewBox="0 0 24 24" width=${props.size || 18} height=${props.size || 18}
-       fill="none" stroke="currentColor" strokeWidth=${extra.w || 1.7}
-       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+       fill="none" stroke="currentColor" stroke-width=${extra.w || 1.7}
+       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     ${d.map((p, i) => html`<path key=${i} d=${p} />`)}
   </svg>`;
 

@@ -8,15 +8,15 @@
 //  data.js   -> textos, habilidades e projetos
 // =============================================================
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'https://esm.sh/react@18.3.1';
-import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client';
-import htm from 'https://esm.sh/htm@3.1.1';
+import { h, Fragment, render } from 'preact';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'preact/hooks';
+import htm from 'htm';
 
 import { perfil, projetos, habilidades, fotos } from './data.js';
 import { Ico } from './icones.js';
 import { Sobre, Habilidades, Projetos, Projeto, Fotos, Terminal, Contato, LinkedIn, GitHub } from './apps.js';
 
-const html = htm.bind(React.createElement);
+const html = htm.bind(h);
 
 /* ---------------------------------------------------------------
    Aplicativos disponíveis
@@ -99,8 +99,15 @@ function useCompacto() {
 function useRelogio() {
   const [agora, setAgora] = useState(() => new Date());
   useEffect(() => {
-    const t = setInterval(() => setAgora(new Date()), 10000);
-    return () => clearInterval(t);
+    // o relógio não mostra segundos: acorda só na virada de cada minuto
+    let t;
+    const agendar = () => {
+      const d = new Date();
+      const falta = 60000 - (d.getSeconds() * 1000 + d.getMilliseconds());
+      t = setTimeout(() => { setAgora(new Date()); agendar(); }, falta + 50);
+    };
+    agendar();
+    return () => clearTimeout(t);
   }, []);
   return agora;
 }
@@ -214,7 +221,7 @@ function MenuBar({ tema, alternarTema, abrirSpotlight, appAtivo, temJanelas, abr
    não re-renderiza as outras. O gerenciador guarda só o que ele
    precisa saber (ordem, foco, minimizada).
 --------------------------------------------------------------- */
-function Janela({ janela, tema, compacto, focada, aoFocar, aoFechar, aoMinimizar, abrirApp }) {
+function Janela({ janela, tema, compacto, focada, oculta, aoFocar, aoFechar, aoMinimizar, abrirApp }) {
   const def = APPS[janela.app];
   const [pos, setPos] = useState(() => ({ x: janela.x, y: janela.y }));
   const [tam, setTam] = useState(() => ({ w: janela.w, h: janela.h }));
@@ -252,6 +259,18 @@ function Janela({ janela, tema, compacto, focada, aoFocar, aoFechar, aoMinimizar
     return () => clearTimeout(t);
   }, [estado]);
 
+  // "Organizar em grade" manda uma nova posição. A janela só a adota,
+  // sem desmontar: o que foi digitado ou carregado dentro dela continua.
+  const reposicao = useRef(janela.reposicionar || 0);
+  useEffect(() => {
+    const r = janela.reposicionar || 0;
+    if (r === reposicao.current) return;
+    reposicao.current = r;
+    setPos({ x: janela.x, y: janela.y });
+    setTam({ w: janela.w, h: janela.h });
+    setMax(false);
+  }, [janela.reposicionar, janela.x, janela.y, janela.w, janela.h]);
+
   // mantém a janela dentro da tela quando ela muda de tamanho
   useEffect(() => {
     const aoRedimensionar = () => {
@@ -287,50 +306,75 @@ function Janela({ janela, tema, compacto, focada, aoFocar, aoFechar, aoMinimizar
   };
 
   // --- arrastar pela barra de título ---
+  // Enquanto o ponteiro se move, a posição vai direto no estilo do
+  // elemento: nem a janela nem o app dentro dela re-renderizam a cada
+  // movimento. O estado só é atualizado ao soltar.
   const aoPressionar = (e) => {
     aoFocar();
     if (compacto || max || e.button !== 0) return;
     if (e.target.closest('.luz')) return;   // os botões não arrastam
     e.currentTarget.setPointerCapture(e.pointerId);
-    arrasto.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y };
+    arrasto.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y, pos };
     setArrastando(true);
   };
   const aoMover = (e) => {
-    if (!arrasto.current) return;
-    setPos(limitar(e.clientX - arrasto.current.dx, e.clientY - arrasto.current.dy, tam.w));
+    const a = arrasto.current;
+    if (!a) return;
+    a.pos = limitar(e.clientX - a.dx, e.clientY - a.dy, tam.w);
+    const el = corpoRef.current;
+    if (el) { el.style.left = a.pos.x + 'px'; el.style.top = a.pos.y + 'px'; }
   };
   const aoSoltar = (e) => {
-    if (!arrasto.current) return;
+    const a = arrasto.current;
+    if (!a) return;
     arrasto.current = null;
+    setPos(a.pos);
     setArrastando(false);
     e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
-  // --- redimensionar pelo canto ---
+  // --- redimensionar pelo canto (mesma ideia: DOM durante, estado ao soltar) ---
   const redimensiona = useRef(null);
   const aoPressionarCanto = (e) => {
     if (compacto) return;
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
-    redimensiona.current = { x: e.clientX, y: e.clientY, w: tam.w, h: tam.h };
+    redimensiona.current = { x: e.clientX, y: e.clientY, w: tam.w, h: tam.h, tam };
   };
   const aoMoverCanto = (e) => {
     const r = redimensiona.current;
     if (!r) return;
-    setTam({
+    r.tam = {
       w: Math.max(360, Math.min(r.w + (e.clientX - r.x), window.innerWidth - pos.x - 8)),
       h: Math.max(240, Math.min(r.h + (e.clientY - r.y), window.innerHeight - pos.y - 8)),
-    });
+    };
+    const el = corpoRef.current;
+    if (el) { el.style.width = r.tam.w + 'px'; el.style.height = r.tam.h + 'px'; }
   };
   const aoSoltarCanto = (e) => {
+    const r = redimensiona.current;
+    if (!r) return;
     redimensiona.current = null;
+    setTam(r.tam);
     e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
-  if (estado === 'minimizada') return null;
+  // O conteúdo do app só é reconstruído quando algo que ele recebe muda.
+  // Reaproveitar o mesmo nó faz o Preact pular a comparação inteira,
+  // então mover ou focar a janela não toca no que está dentro dela.
+  const conteudo = useMemo(
+    () => h(def.comp, { tema, abrirApp, params: janela.params }),
+    [def.comp, tema, abrirApp, janela.params],
+  );
+
+  // Minimizada (ou, no celular, atrás da janela do topo) ela continua
+  // montada e só sai da tela: o app mantém o estado, e GitHub/LinkedIn
+  // não precisam buscar tudo de novo ao voltar.
+  const escondida = estado === 'minimizada' || oculta;
 
   const classes = [
     'janela',
+    escondida && 'oculta',
     focada || estado === 'minimizando' ? 'focada' : 'atras',
     arrastando && 'arrastando',
     max && 'maximizada',
@@ -340,18 +384,21 @@ function Janela({ janela, tema, compacto, focada, aoFocar, aoFechar, aoMinimizar
     def.escuro && 'janela-escura',
   ].filter(Boolean).join(' ');
 
+  // se algo re-renderizar no meio de um arrasto, usa a posição em curso
+  const p = arrasto.current ? arrasto.current.pos : pos;
+  const t = redimensiona.current ? redimensiona.current.tam : tam;
   const estilo = compacto
     ? { zIndex: janela.z, ...genie }
-    : { left: pos.x, top: pos.y, width: tam.w, height: tam.h, zIndex: janela.z, ...genie };
+    : { left: p.x, top: p.y, width: t.w, height: t.h, zIndex: janela.z, ...genie };
 
   const titulo = janela.params.projeto ? janela.params.projeto.titulo : def.nome;
 
   return html`
     <section className=${classes} style=${estilo} ref=${corpoRef} onMouseDown=${aoFocar}
-             role="dialog" aria-label=${titulo}>
+             role="dialog" aria-label=${titulo} aria-hidden=${escondida ? 'true' : undefined}>
       <header className="janela-barra" onPointerDown=${aoPressionar}
               onPointerMove=${aoMover} onPointerUp=${aoSoltar} onPointerCancel=${aoSoltar}
-              onDoubleClick=${alternarMax}>
+              onDblClick=${alternarMax}>
         <div className="luzes">
           <button className="luz luz-vermelha" onClick=${aoFechar} aria-label="Fechar"><span>×</span></button>
           <button className="luz luz-amarela" onClick=${aoMinimizar} aria-label="Minimizar"><span>−</span></button>
@@ -365,9 +412,7 @@ function Janela({ janela, tema, compacto, focada, aoFocar, aoFechar, aoMinimizar
         </span>
       </header>
 
-      <div className="janela-corpo">
-        ${React.createElement(def.comp, { tema, abrirApp, params: janela.params })}
-      </div>
+      <div className="janela-corpo">${conteudo}</div>
 
       ${!compacto && !max && html`
         <span className="janela-canto" onPointerDown=${aoPressionarCanto}
@@ -382,61 +427,82 @@ function Janela({ janela, tema, compacto, focada, aoFocar, aoFechar, aoMinimizar
 const MAG_RAIO = 110;
 const MAG_FORCA = 0.42;
 
-function DockItem({ nome, icone, cor, href, onClick, aberto, mouseX }) {
-  const ref = useRef(null);
-  const [escala, setEscala] = useState(1);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (mouseX == null) return setEscala(1);
-    const r = el.getBoundingClientRect();
-    const d = Math.abs(mouseX - (r.left + r.width / 2));
-    setEscala(d > MAG_RAIO ? 1 : 1 + MAG_FORCA * (1 - d / MAG_RAIO));
-  }, [mouseX]);
-
+function DockItem({ nome, icone, cor, href, onClick, aberto }) {
   const conteudo = html`
-    <${React.Fragment}>
+    <${Fragment}>
       <span className="dock-tip">${nome}</span>
-      <span className="dock-icon"
-            style=${{ background: cor, transform: `scale(${escala}) translateY(${(escala - 1) * -12}px)` }}>
-        ${React.createElement(Ico[icone], { size: 23 })}
+      <span className="dock-icon" style=${{ background: cor }}>
+        ${h(Ico[icone], { size: 23 })}
       </span>
       <span className="dock-dot"></span>
     <//>`;
 
   return href
-    ? html`<a className="dock-item" ref=${ref} href=${href} target="_blank" rel="noopener"
+    ? html`<a className="dock-item" href=${href} target="_blank" rel="noopener"
               aria-label=${nome}>${conteudo}</a>`
-    : html`<button className=${'dock-item' + (aberto ? ' on' : '')} ref=${ref}
+    : html`<button className=${'dock-item' + (aberto ? ' on' : '')}
               onClick=${onClick} aria-label=${nome}>${conteudo}</button>`;
 }
 
 function Dock({ abertos, abrirApp, tema, alternarTema, minimizadas, aoRestaurar }) {
-  const [mouseX, setMouseX] = useState(null);
+  const dockRef = useRef(null);
+  const quadro = useRef(0);
+
+  // A ampliação é escrita direto no transform de cada ícone, no máximo
+  // uma vez por quadro. Antes, cada movimento do mouse re-renderizava o
+  // Dock inteiro duas vezes (estado + efeito com medição em cada item).
+  // Só vale para mouse: no toque não existe "sair de cima", e o ícone
+  // tocado ficaria ampliado.
+  const ampliar = (x) => {
+    cancelAnimationFrame(quadro.current);
+    quadro.current = requestAnimationFrame(() => {
+      const dock = dockRef.current;
+      if (!dock) return;
+      const itens = [...dock.querySelectorAll('.dock-item:not(.dock-min)')];
+      // primeiro todas as leituras, depois todas as escritas: intercalar
+      // as duas força o navegador a recalcular o estilo a cada ícone
+      const centros = x == null ? null : itens.map((it) => {
+        const r = it.getBoundingClientRect();
+        return r.left + r.width / 2;
+      });
+      itens.forEach((it, i) => {
+        let escala = 1;
+        if (centros) {
+          const d = Math.abs(x - centros[i]);
+          if (d < MAG_RAIO) escala = 1 + MAG_FORCA * (1 - d / MAG_RAIO);
+        }
+        const t = escala === 1
+          ? ''
+          : `scale(${escala.toFixed(3)}) translateY(${((escala - 1) * -12).toFixed(1)}px)`;
+        const icone = it.querySelector('.dock-icon');
+        if (icone.style.transform !== t) icone.style.transform = t;
+      });
+    });
+  };
+  useEffect(() => () => cancelAnimationFrame(quadro.current), []);
 
   return html`
     <div className="dock-wrap">
-      <div className="dock"
-           onMouseMove=${(e) => setMouseX(e.clientX)}
-           onMouseLeave=${() => setMouseX(null)}>
+      <div className="dock" ref=${dockRef}
+           onPointerMove=${(e) => e.pointerType === 'mouse' && ampliar(e.clientX)}
+           onPointerLeave=${() => ampliar(null)}>
         ${DOCK.map((id) => html`
           <${DockItem} key=${id} nome=${APPS[id].nome} icone=${APPS[id].icone} cor=${APPS[id].cor}
-                       mouseX=${mouseX} aberto=${abertos.has(id)} onClick=${() => abrirApp(id)} />`)}
+                       aberto=${abertos.has(id)} onClick=${() => abrirApp(id)} />`)}
         <span className="dock-sep"></span>
         <${DockItem} nome=${tema === 'dark' ? 'Tema claro' : 'Tema escuro'}
-                     icone=${tema === 'dark' ? 'sun' : 'moon'} mouseX=${mouseX}
+                     icone=${tema === 'dark' ? 'sun' : 'moon'}
                      cor="linear-gradient(145deg,#96a0ad,#3c434c)" onClick=${alternarTema} />
 
         ${minimizadas.length > 0 && html`
-          <${React.Fragment}>
+          <${Fragment}>
             <span className="dock-sep"></span>
             ${minimizadas.map((m) => html`
               <button className="dock-item dock-min" key=${m.id} onClick=${() => aoRestaurar(m.id)}
                       aria-label=${'Restaurar ' + m.titulo}>
                 <span className="dock-tip">${m.titulo}</span>
                 <span className="dock-icon dock-icon-min" style=${{ background: APPS[m.app].cor }}>
-                  ${React.createElement(Ico[APPS[m.app].icone], { size: 17 })}
+                  ${h(Ico[APPS[m.app].icone], { size: 17 })}
                 </span>
                 <span className="dock-dot"></span>
               </button>`)}
@@ -470,7 +536,7 @@ function AreaDeTrabalho({ abrirApp, vazia }) {
         ${atalhos.map((a) => html`
           <button className="atalho" key=${a.app} onClick=${() => abrirApp(a.app)}>
             <span className="atalho-icone" style=${{ background: APPS[a.app].cor }}>
-              ${React.createElement(Ico[APPS[a.app].icone], { size: 21 })}
+              ${h(Ico[APPS[a.app].icone], { size: 21 })}
             </span>
             <span className="atalho-rotulo">${a.rotulo}</span>
           </button>`)}
@@ -487,6 +553,9 @@ function Spotlight({ onFechar, abrirApp }) {
   const campo = useRef(null);
 
   useEffect(() => { campo.current && campo.current.focus(); }, []);
+
+  // sem acentos e em minúsculas, para "portfolio" achar "Portfólio"
+  const norm = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
   const base = useMemo(() => [
     ...DOCK.map((id) => ({
@@ -505,10 +574,13 @@ function Spotlight({ onFechar, abrirApp }) {
       tipo: g.grupo, nome: i.nome, icone: 'code', cor: APPS.habilidades.cor,
       acao: () => abrirApp('habilidades'),
     }))),
-  ], [abrirApp]);
+  ].map((r) => ({ ...r, busca: norm(r.nome + ' ' + r.tipo) })), [abrirApp]);
 
-  const norm = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  const res = q ? base.filter((r) => norm(r.nome + ' ' + r.tipo).includes(norm(q))) : base.slice(0, 8);
+  // cada palavra digitada precisa aparecer, em qualquer ordem
+  const termos = norm(q).split(/\s+/).filter(Boolean);
+  const res = termos.length
+    ? base.filter((r) => termos.every((t) => r.busca.includes(t)))
+    : base.slice(0, 8);
 
   const executar = useCallback((r) => { if (r) { r.acao(); onFechar(); } }, [onFechar]);
 
@@ -525,7 +597,7 @@ function Spotlight({ onFechar, abrirApp }) {
         <div className="spot-input">
           <${Ico.search} size=${20} />
           <input ref=${campo} value=${q} placeholder="Buscar aplicativos, projetos, tecnologias..."
-                 onChange=${(e) => { setQ(e.target.value); setSel(0); }} onKeyDown=${aoTeclar}
+                 onInput=${(e) => { setQ(e.target.value); setSel(0); }} onKeyDown=${aoTeclar}
                  aria-label="Busca" />
         </div>
         ${res.length === 0
@@ -536,7 +608,7 @@ function Spotlight({ onFechar, abrirApp }) {
                 <li key=${r.tipo + r.nome} className=${n === sel ? 'sel' : ''} onMouseEnter=${() => setSel(n)}>
                   <button onClick=${() => executar(r)}>
                     <span className="spot-ico" style=${{ background: r.cor }}>
-                      ${React.createElement(Ico[r.icone], { size: 14 })}
+                      ${h(Ico[r.icone], { size: 14 })}
                     </span>
                     <span>${r.nome}</span>
                     <span className="spot-meta">${r.tipo}</span>
@@ -631,8 +703,8 @@ function Sistema() {
           x: 12 + (i % colunas) * larg,
           y: MENUBAR + 8 + Math.floor(i / colunas) * alt,
           w: larg - 14, h: alt - 14,
-          // muda a identidade da janela para ela renascer na nova posição
-          id: j.id, reposicionar: (j.reposicionar || 0) + 1,
+          // avisa a janela para adotar a nova posição (ver Janela)
+          reposicionar: (j.reposicionar || 0) + 1,
         };
       });
     });
@@ -667,13 +739,11 @@ function Sistema() {
     titulo: j.params.projeto ? j.params.projeto.titulo : APPS[j.app].nome,
   }));
 
-  // no celular só a janela do topo aparece, como um app em tela cheia
-  // As minimizadas continuam montadas: a própria Janela se remove quando a
-  // animação termina. Se filtrássemos aqui, o genie nunca chegaria a rodar.
-  const naTela = compacto ? (topo ? [topo] : []) : janelas;
+  // No celular só a janela do topo aparece, como um app em tela cheia.
+  // As outras continuam montadas, só escondidas, para não perder o estado.
 
   return html`
-    <${React.Fragment}>
+    <${Fragment}>
       <${MenuBar} tema=${tema} alternarTema=${alternarTema} abrirSpotlight=${() => setSpot(true)}
                   appAtivo=${topo && topo.app} temJanelas=${visiveis.length > 0}
                   abrirApp=${abrirApp} aoOrganizar=${organizar} aoFecharTudo=${fecharTudo}
@@ -682,9 +752,10 @@ function Sistema() {
 
       <${AreaDeTrabalho} abrirApp=${abrirApp} vazia=${visiveis.length === 0} />
 
-      ${naTela.map((j) => html`
-        <${Janela} key=${j.id + ':' + (j.reposicionar || 0)} janela=${j} tema=${tema} compacto=${compacto}
+      ${janelas.map((j) => html`
+        <${Janela} key=${j.id} janela=${j} tema=${tema} compacto=${compacto}
                    focada=${topo && topo.id === j.id}
+                   oculta=${compacto && !(topo && topo.id === j.id)}
                    aoFocar=${() => focar(j.id)}
                    aoFechar=${() => fechar(j.id)}
                    aoMinimizar=${() => minimizar(j.id)}
@@ -697,4 +768,6 @@ function Sistema() {
     <//>`;
 }
 
-createRoot(document.getElementById('root')).render(html`<${Sistema} />`);
+const raiz = document.getElementById('root');
+raiz.replaceChildren();           // tira a tela de boot
+render(html`<${Sistema} />`, raiz);

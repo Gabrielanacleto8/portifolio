@@ -5,14 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Gabriel Anacleto — Desenvolvedor Júnior e estudante de Engenharia de Software. Desenvolvimento e manutenção de sistemas, análise de requisitos e implementação de soluções." />
   <meta name="theme-color" content="#0b0b12" />
+  <meta name="color-scheme" content="dark light" />
   <title>Gabriel Anacleto — Desenvolvedor Júnior</title>
 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%230a84ff'/><text x='50' y='68' font-size='52' font-family='Helvetica,Arial' font-weight='bold' fill='white' text-anchor='middle'>GA</text></svg>" />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- Fontes hospedadas aqui mesmo (assets/fontes): nenhum domínio externo
+       na carga da página. Só o subconjunto latino é pré-carregado; o
+       latin-ext entra sob demanda pelo unicode-range em style.css. -->
+  <link rel="preload" href="assets/fontes/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fontes/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Preact e htm vêm de vendor/, mapeados para os nomes curtos que o
+       código importa ('preact', 'preact/hooks', 'htm'). -->
+  <script type="importmap">
+    {
+      "imports": {
+        "preact": "./vendor/preact.module.js",
+        "preact/hooks": "./vendor/hooks.module.js",
+        "htm": "./vendor/htm.module.js"
+      }
+    }
+  </script>
+
+  <!-- Pré-carrega o grafo inteiro de módulos de uma vez, em vez de o
+       navegador descobrir cada import só depois de baixar o anterior. -->
+  <link rel="modulepreload" href="vendor/preact.module.js" />
+  <link rel="modulepreload" href="vendor/hooks.module.js" />
+  <link rel="modulepreload" href="vendor/htm.module.js" />
+  <link rel="modulepreload" href="script.js" />
+  <link rel="modulepreload" href="apps.js" />
+  <link rel="modulepreload" href="data.js" />
+  <link rel="modulepreload" href="icones.js" />
+  <link rel="modulepreload" href="logos.js" />
 
   <script>
     // Aplica o tema salvo antes da primeira pintura (evita "flash" branco)
