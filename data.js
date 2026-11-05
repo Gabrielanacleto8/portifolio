@@ -29,8 +29,9 @@ export const perfil = {
   githubUser: 'Gabrielanacleto8',
   linkedin: 'https://www.linkedin.com/in/gabriel-anacleto-01a98613b/',
   linkedinUser: 'in/gabriel-anacleto',
-  // usado pelo badge oficial do LinkedIn (a parte final da URL do perfil)
-  linkedinVanity: 'gabriel-anacleto-01a98613b',
+  // empresa atual e instituição de ensino, como aparecem no LinkedIn
+  empresa: 'Quality Transportes e Logística',
+  instituicao: 'UNIASSELVI',
   localizacao: 'Brasil · Remoto ou presencial',
 };
 
@@ -55,6 +56,8 @@ export const trajetoria = [
     etapa: 'Em curso',
     titulo: 'Engenharia de Software',
     desc: 'Graduação em andamento, com foco em boas práticas, arquitetura, banco de dados e qualidade de software.',
+    // marca a etapa como formação: no LinkedIn ela vai para "Formação", não "Experiência"
+    formacao: true,
   },
 ];
 
@@ -202,6 +205,28 @@ export const fotos = [
 // -------------------------------------------------------------
 export const projetos = [
   {
+    id: 'financeiro-clinica',
+    titulo: 'Módulo Financeiro para Clínica de Estética',
+    badge: 'Em desenvolvimento',
+    tipo: 'dev',
+    resumo: 'Controle de receitas, despesas e caixa de uma clínica de estética.',
+    desc: 'Módulo financeiro desenvolvido para uma clínica de estética, integrado ao sistema de gestão da clínica, que também conta com agenda de atendimentos por profissional. Reúne em um só painel o que entrou e saiu do caixa: valores recebidos, pendentes, despesas pagas e a pagar, saldo do período e faturamento lançado. Permite filtrar por período, paciente (nome ou CPF), tipo de lançamento e situação, além de acompanhar a evolução mensal e o recebido por forma de pagamento.',
+    destaques: [
+      'Painel com recebido, pendente, saldo, faturamento e despesas do período',
+      'Gráfico de receitas x despesas dos últimos meses, com visão em tabela',
+      'Filtros por período, paciente e situação, com exportação para planilha (CSV)',
+      'Resumo do recebido no mês por forma de pagamento',
+    ],
+    tags: ['PHP', 'Laravel', 'JavaScript', 'React', 'MySQL'],
+    imagens: [
+      'assets/projetos/financeiro-clinica-estetica.png',
+      'assets/projetos/financeiro-clinica-agenda.png',
+      'assets/projetos/financeiro-clinica-inicio.png',
+    ],
+    link: '',
+    linkLabel: '',
+  },
+  {
     id: 'producao-mecanica',
     titulo: 'Controle de Produção de Oficina Mecânica',
     badge: 'Em desenvolvimento',
@@ -212,11 +237,15 @@ export const projetos = [
       'Linha do tempo da OS mostrando onde foi o tempo do veículo',
       'Comparativo de previsto x realizado por serviço, com alerta de tempo excedido',
       'Painel por mecânico com controle de horas, linha do dia e serviços concluídos',
+      'Painel do pátio com fila de veículos, ocupação dos boxes e alertas de atraso e peças pendentes',
+      'Controle de ferramentas com horímetro mês a mês, localização e histórico de uso',
     ],
     tags: ['PHP', 'Laravel', 'JavaScript', 'React', 'MySQL'],
     imagens: [
       'assets/projetos/producao-mecanica-os.jpg',
       'assets/projetos/producao-mecanica-mecanico.jpg',
+      'assets/projetos/producao-mecanica-patio.png',
+      'assets/projetos/producao-mecanica-ferramenta.png',
     ],
     link: '',
     linkLabel: '',

@@ -348,90 +348,98 @@ export function Contato({ abrirApp }) {
 /* ---------------------------------------------------------------
    LinkedIn
 
-   Esta janela mostra o perfil do LinkedIn e nada mais — trajetória e
-   competências já são o app "Sobre mim".
-
-   O badge oficial é o único jeito sancionado de exibir o perfil real
-   dentro de outro site. Não é um iframe apontando para o linkedin.com
-   (isso o X-Frame-Options bloqueia): o script deles busca o HTML por
-   JSONP e escreve num iframe local. Exige perfil público.
-
-   Se o LinkedIn não responder, entra no lugar um cartão estático com
-   os mesmos campos que o badge mostraria.
+   O LinkedIn não oferece API pública de perfil, e o badge oficial
+   (iframe deles) será descontinuado em 12/12/2026. Por isso o perfil é
+   montado aqui com os dados de data.js, no mesmo visual do site, e o
+   botão no rodapé leva ao perfil completo.
 --------------------------------------------------------------- */
-const BADGE_SRC = 'https://platform.linkedin.com/badges/js/profile.js';
-const BADGE_TIMEOUT = 6000;
-
-function CartaoEstatico() {
+function AvatarLinkedIn() {
+  const [falhou, setFalhou] = useState(false);
   return html`
-    <article className="li-cartao">
-      <div className="li-capa"></div>
-      <div className="li-cartao-corpo">
-        <div className="li-avatar">${perfil.iniciais}</div>
-        <h2 className="li-nome">${perfil.nome}</h2>
-        <p className="li-headline">${perfil.headline}</p>
-        <p className="li-local"><${Ico.pin} size=${13} /> ${perfil.localizacao}</p>
-        <p className="li-url">linkedin.com/${perfil.linkedinUser}</p>
-      </div>
-    </article>`;
+    <div className="li-avatar">
+      ${perfil.foto && !falhou
+        ? html`<img src=${perfil.foto} alt=${'Foto de ' + perfil.nome} onError=${() => setFalhou(true)} />`
+        : perfil.iniciais}
+    </div>`;
 }
 
 export function LinkedIn({ tema }) {
-  const palco = useRef(null);
-  const [estado, setEstado] = useState('carregando'); // carregando | pronto | indisponivel
-
-  useEffect(() => {
-    const alvo = palco.current;
-    if (!alvo) return;
-    setEstado('carregando');
-
-    // O script varre a página uma vez ao carregar. Como a janela abre
-    // depois, chamamos LIRenderAll() — a API oficial para isso.
-    if (window.LIRenderAll) {
-      window.LIRenderAll();
-    } else {
-      const s = document.createElement('script');
-      s.src = BADGE_SRC;
-      s.async = true;
-      s.defer = true;
-      s.onerror = () => setEstado('indisponivel');
-      document.body.appendChild(s);
-    }
-
-    // O badge não avisa quando falha, então checamos se o iframe apareceu.
-    const inicio = Date.now();
-    const timer = setInterval(() => {
-      if (alvo.querySelector('iframe')) {
-        setEstado('pronto');
-        clearInterval(timer);
-      } else if (Date.now() - inicio > BADGE_TIMEOUT) {
-        setEstado('indisponivel');
-        clearInterval(timer);
-      }
-    }, 250);
-
-    return () => clearInterval(timer);
-  }, [tema]);
+  // mais recente primeiro, como no LinkedIn
+  const experiencia = trajetoria.filter((t) => !t.formacao).reverse();
+  const formacao = trajetoria.filter((t) => t.formacao);
+  const competencias = habilidades.flatMap((g) => g.itens);
 
   return html`
-    <div className=${'li-app estado-' + estado}>
-      <div className="li-palco" ref=${palco}>
-        <div className="badge-base LI-profile-badge"
-             key=${tema}
-             data-locale="pt_BR"
-             data-size="medium"
-             data-theme=${tema === 'dark' ? 'dark' : 'light'}
-             data-type="VERTICAL"
-             data-vanity=${perfil.linkedinVanity}
-             data-version="v1">
-          <a className="badge-base__link LI-simple-link"
-             href=${perfil.linkedin} target="_blank" rel="noopener">${perfil.nome}</a>
+    <div className="li-app">
+      <article className="li-perfil">
+        <div className="li-capa">
+          <span className="li-capa-marca"><${Ico.linkedin} size=${15} /> LinkedIn</span>
         </div>
+        <div className="li-topo">
+          <${AvatarLinkedIn} />
+          <div className="li-id">
+            <h2 className="li-nome">${perfil.nome}</h2>
+            <p className="li-headline">${perfil.headline}</p>
+            <p className="li-local"><${Ico.pin} size=${13} /> ${perfil.localizacao}</p>
+            ${perfil.status && html`
+              <span className="li-status"><span className="pulse"></span> ${perfil.status}</span>`}
+          </div>
+          <ul className="li-org">
+            ${perfil.empresa && html`<li><${Ico.maleta} size=${15} /> ${perfil.empresa}</li>`}
+            ${perfil.instituicao && html`<li><${Ico.formatura} size=${15} /> ${perfil.instituicao}</li>`}
+          </ul>
+        </div>
+      </article>
 
-        ${estado === 'carregando' && html`
-          <p className="li-aviso">Carregando perfil do LinkedIn…</p>`}
-        ${estado === 'indisponivel' && html`<${CartaoEstatico} />`}
-      </div>
+      <section className="li-bloco">
+        <h3 className="li-secao">Sobre</h3>
+        <p className="li-texto">${perfil.resumoCurto}</p>
+      </section>
+
+      <section className="li-bloco">
+        <h3 className="li-secao">Experiência</h3>
+        <ul className="li-lista">
+          ${experiencia.map((t) => html`
+            <li key=${t.titulo} className=${t.atual ? 'atual' : ''}>
+              <div className="li-marca"><${Ico.maleta} size=${18} /></div>
+              <div>
+                <p className="li-item-titulo">${t.titulo}</p>
+                ${t.atual && perfil.empresa && html`<p className="li-item-org">${perfil.empresa}</p>`}
+                <p className="li-item-etapa">${t.atual ? 'Cargo atual' : t.etapa}</p>
+                <p className="li-item-desc">${t.desc}</p>
+              </div>
+            </li>`)}
+        </ul>
+      </section>
+
+      ${formacao.length > 0 && html`
+        <section className="li-bloco">
+          <h3 className="li-secao">Formação acadêmica</h3>
+          <ul className="li-lista">
+            ${formacao.map((t) => html`
+              <li key=${t.titulo}>
+                <div className="li-marca"><${Ico.formatura} size=${18} /></div>
+                <div>
+                  <p className="li-item-titulo">${perfil.instituicao || t.titulo}</p>
+                  ${perfil.instituicao && html`<p className="li-item-org">${t.titulo}</p>`}
+                  <p className="li-item-etapa">${t.etapa}</p>
+                </div>
+              </li>`)}
+          </ul>
+        </section>`}
+
+      <section className="li-bloco">
+        <h3 className="li-secao">Competências</h3>
+        <div className="li-competencias">
+          ${competencias.map((it) => html`
+            <span className="li-comp" key=${it.nome}>
+              ${it.logo
+                ? html`<${LogoMarca} chave=${it.logo} tamanho=${14} tema=${tema} />`
+                : h(Ico[it.icone], { size: 14 })}
+              ${it.nome}
+            </span>`)}
+        </div>
+      </section>
 
       <div className="li-acoes">
         <a className="btn btn-primary btn-sm" href=${perfil.linkedin} target="_blank" rel="noopener">
@@ -626,8 +634,25 @@ function Visor({ lista, indice, aoFechar, aoTrocar }) {
     return () => window.removeEventListener('keydown', aoTeclar);
   }, [aoTrocar]);
 
+  // no celular: deslizar para os lados troca a foto, para baixo fecha
+  const toque = useRef(null);
+  const aoTocar = (e) => {
+    const t = e.touches[0];
+    toque.current = { x: t.clientX, y: t.clientY };
+  };
+  const aoSoltarToque = (e) => {
+    const ini = toque.current;
+    toque.current = null;
+    if (!ini) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - ini.x;
+    const dy = t.clientY - ini.y;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) aoTrocar(dx < 0 ? 1 : -1);
+    else if (dy > 90) aoFechar();
+  };
+
   return html`
-    <div className="visor" onClick=${aoFechar}>
+    <div className="visor" onClick=${aoFechar} onTouchStart=${aoTocar} onTouchEnd=${aoSoltarToque}>
       <div className="visor-quadro" onClick=${(e) => e.stopPropagation()}>
         ${erro
           ? html`<div className="visor-erro">Não encontrei <code>${foto.arquivo}</code></div>`

@@ -77,13 +77,16 @@ function useTema() {
   const [tema, setTema] = useState(() => document.documentElement.dataset.theme || 'dark');
   useEffect(() => {
     document.documentElement.dataset.theme = tema;
+    // no iPhone o Safari pinta a barra do navegador com esta cor
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = tema === 'dark' ? '#0b0b12' : '#f2f2f7';
     try { localStorage.setItem('ga-theme', tema); } catch (e) {}
   }, [tema]);
   return [tema, useCallback(() => setTema((t) => (t === 'dark' ? 'light' : 'dark')), [])];
 }
 
-// Em telas pequenas não há arrastar nem sobreposição: cada janela
-// ocupa a tela inteira, como um app de celular.
+// Em telas pequenas o sistema vira um iPhone: tela inicial com ícones,
+// e cada app ocupa a tela inteira. A consulta é a mesma de style.css.
 function useCompacto() {
   const consulta = '(max-width: 820px), (max-height: 520px)';
   const [compacto, setCompacto] = useState(() => window.matchMedia(consulta).matches);
@@ -221,7 +224,30 @@ function MenuBar({ tema, alternarTema, abrirSpotlight, appAtivo, temJanelas, abr
    não re-renderiza as outras. O gerenciador guarda só o que ele
    precisa saber (ordem, foco, minimizada).
 --------------------------------------------------------------- */
-function Janela({ janela, tema, compacto, focada, oculta, aoFocar, aoFechar, aoMinimizar, abrirApp }) {
+// No iPhone o app cresce a partir do próprio ícone e volta para ele ao
+// fechar. Devolve o centro do ícone como origem da animação; a janela
+// ocupa a tela toda, então coordenadas da tela servem direto.
+function origemDoIcone(app) {
+  const el = document.querySelector(`.ios-icone[data-app="${app}"]`);
+  if (!el) return { '--ox': '50%', '--oy': '50%' };
+  const r = el.getBoundingClientRect();
+  let x = r.left + r.width / 2;
+  let y = r.top + r.height / 2;
+  // com um app aberto a tela inicial fica ampliada (ver .ios-home.recuada);
+  // desfaz a ampliação para mirar onde o ícone estará ao voltar
+  const casa = el.closest('.ios-home');
+  if (casa && casa.classList.contains('recuada')) {
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    x = cx + (x - cx) / IOS_ZOOM_CASA;
+    y = cy + (y - cy) / IOS_ZOOM_CASA;
+  }
+  return { '--ox': Math.round(x) + 'px', '--oy': Math.round(y) + 'px' };
+}
+const IOS_ZOOM_CASA = 1.08;   // igual ao scale de .ios-home.recuada
+
+function Janela({ janela, tema, compacto, focada, oculta, aoFocar, aoFechar, aoMinimizar, abrirApp,
+                  voltarPara, aoVoltar }) {
   const def = APPS[janela.app];
   const [pos, setPos] = useState(() => ({ x: janela.x, y: janela.y }));
   const [tam, setTam] = useState(() => ({ w: janela.w, h: janela.h }));
@@ -233,10 +259,14 @@ function Janela({ janela, tema, compacto, focada, oculta, aoFocar, aoFechar, aoM
   // minimizar/restaurar em duas etapas para a animação aparecer
   const [estado, setEstado] = useState('aberta');
   const corpoRef = useRef(null);
-  // deslocamento até o Dock, para a janela ser sugada na direção certa
-  const [genie, setGenie] = useState({ '--gx': '0px', '--gy': '0px' });
+  // Desktop: deslocamento até o Dock, para a janela ser sugada na direção
+  // certa. iPhone: o ponto do ícone de onde o app sai e para onde volta.
+  const [genie, setGenie] = useState(() => (compacto
+    ? origemDoIcone(janela.app)
+    : { '--gx': '0px', '--gy': '0px' }));
 
   const mirarNoDock = useCallback(() => {
+    if (compacto) { setGenie(origemDoIcone(janela.app)); return; }
     const el = corpoRef.current;
     const dock = document.querySelector('.dock');
     if (!el || !dock) return;
@@ -247,11 +277,17 @@ function Janela({ janela, tema, compacto, focada, oculta, aoFocar, aoFechar, aoM
       '--gx': Math.round(d.right - 34 - (j.left + j.width / 2)) + 'px',
       '--gy': Math.round(d.top + 24 - j.bottom) + 'px',
     });
-  }, []);
+  }, [compacto, janela.app]);
   useEffect(() => {
-    if (janela.min && estado === 'aberta') { mirarNoDock(); setEstado('minimizando'); }
-    else if (!janela.min && estado === 'minimizada') setEstado('restaurando');
-  }, [janela.min, estado, mirarNoDock]);
+    if (janela.min && estado === 'aberta') {
+      // no iPhone, apps que estavam escondidos atrás do topo só somem
+      if (janela.semAnimacao) setEstado('minimizada');
+      else { mirarNoDock(); setEstado('minimizando'); }
+    } else if (!janela.min && estado === 'minimizada') {
+      mirarNoDock();
+      setEstado('restaurando');
+    }
+  }, [janela.min, janela.semAnimacao, estado, mirarNoDock]);
 
   useEffect(() => {
     if (estado !== 'minimizando' && estado !== 'restaurando') return;
@@ -382,6 +418,8 @@ function Janela({ janela, tema, compacto, focada, oculta, aoFocar, aoFechar, aoM
     estado === 'minimizando' && 'minimizando',
     estado === 'restaurando' && 'restaurando',
     def.escuro && 'janela-escura',
+    // no iPhone, app aberto de dentro de outro entra pela direita
+    janela.empilhada && 'empilhada',
   ].filter(Boolean).join(' ');
 
   // se algo re-renderizar no meio de um arrasto, usa a posição em curso
@@ -392,6 +430,24 @@ function Janela({ janela, tema, compacto, focada, oculta, aoFocar, aoFechar, aoM
     : { left: p.x, top: p.y, width: t.w, height: t.h, zIndex: janela.z, ...genie };
 
   const titulo = janela.params.projeto ? janela.params.projeto.titulo : def.nome;
+
+  // iPhone: barra de navegação do iOS, com "‹ Voltar" no lugar das luzes
+  if (compacto) {
+    return html`
+      <section className=${classes} style=${estilo} ref=${corpoRef} data-janela=${janela.id}
+               role="dialog" aria-label=${titulo} aria-hidden=${escondida ? 'true' : undefined}>
+        <header className="ios-nav">
+          <button className="ios-voltar" onClick=${aoVoltar}
+                  aria-label=${'Voltar para ' + (voltarPara || 'a tela inicial')}>
+            <${Ico.anterior} size=${24} />
+            <span>${voltarPara || 'Início'}</span>
+          </button>
+          <span className="ios-nav-titulo">${titulo}</span>
+          <span className="ios-nav-lado" aria-hidden="true"></span>
+        </header>
+        <div className="janela-corpo">${conteudo}</div>
+      </section>`;
+  }
 
   return html`
     <section className=${classes} style=${estilo} ref=${corpoRef} onMouseDown=${aoFocar}
@@ -545,9 +601,183 @@ function AreaDeTrabalho({ abrirApp, vazia }) {
 }
 
 /* ---------------------------------------------------------------
+   iPhone — barra de status, tela inicial e indicador de início
+
+   Em telas pequenas a área de trabalho do macOS dá lugar a um iPhone:
+   ícones em grade, um widget de perfil, o Dock de 4 apps e a pílula
+   "Buscar". Os apps são os mesmos; só a moldura muda.
+--------------------------------------------------------------- */
+const IOS_GRADE = ['habilidades', 'fotos', 'terminal', 'linkedin', 'github'];
+const IOS_DOCK = ['sobre', 'projetos', 'contato', 'whatsapp'];
+
+// ícones da barra de status no traço do iOS (cheios, não contornados)
+const Sinal = () => html`
+  <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-hidden="true">
+    <rect x="0" y="8" width="3" height="4" rx="1" /><rect x="5" y="5.5" width="3" height="6.5" rx="1" />
+    <rect x="10" y="3" width="3" height="9" rx="1" /><rect x="15" y="0" width="3" height="12" rx="1" />
+  </svg>`;
+const WifiIos = () => html`
+  <svg width="17" height="12" viewBox="0 0 17 12" fill="none" stroke="currentColor"
+       stroke-width="2.1" stroke-linecap="round" aria-hidden="true">
+    <path d="M1.6 4.3a10 10 0 0 1 13.8 0" /><path d="M4.4 7.2a6 6 0 0 1 8.2 0" />
+    <circle cx="8.5" cy="10.2" r="1.4" fill="currentColor" stroke="none" />
+  </svg>`;
+const Bateria = () => html`
+  <svg width="27" height="13" viewBox="0 0 27 13" aria-hidden="true">
+    <rect x="0.5" y="0.5" width="23" height="12" rx="3.8" fill="none" stroke="currentColor" opacity="0.4" />
+    <rect x="2" y="2" width="17" height="9" rx="2.2" fill="currentColor" />
+    <path d="M25 4.4c.9.3 1.4 1.1 1.4 2.1s-.5 1.8-1.4 2.1z" fill="currentColor" opacity="0.45" />
+  </svg>`;
+
+// "escuro": o app da frente tem fundo escuro nos dois temas (Terminal),
+// então a barra fica clara para continuar legível
+function BarraDeStatus({ escuro }) {
+  const agora = useRelogio();
+  const hora = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return html`
+    <header className=${'ios-status' + (escuro ? ' sobre-escuro' : '')} aria-hidden="true">
+      <span className="ios-hora">${hora}</span>
+      <span className="ios-status-dir"><${Sinal} /><${WifiIos} /><${Bateria} /></span>
+    </header>`;
+}
+
+function IconeApp({ id, nome, icone, cor, href, onClick, rotulo = true }) {
+  const miolo = html`
+    <${Fragment}>
+      <span className="ios-icone" data-app=${id} style=${{ background: cor }}>
+        ${h(Ico[icone], { size: 30 })}
+      </span>
+      ${rotulo && html`<span className="ios-rotulo">${nome}</span>`}
+    <//>`;
+  return href
+    ? html`<a className="ios-app" href=${href} target="_blank" rel="noopener" aria-label=${nome}>${miolo}</a>`
+    : html`<button className="ios-app" onClick=${onClick} aria-label=${nome}>${miolo}</button>`;
+}
+
+function WidgetPerfil({ onAbrir }) {
+  const [fotoFalhou, setFotoFalhou] = useState(false);
+  return html`
+    <button className="ios-widget" onClick=${onAbrir} aria-label="Abrir Sobre mim">
+      <span className="ios-widget-topo">
+        <span className="ios-widget-foto">
+          ${perfil.foto && !fotoFalhou
+            ? html`<img src=${perfil.foto} alt="" onError=${() => setFotoFalhou(true)} />`
+            : perfil.iniciais}
+        </span>
+        <span className="ios-widget-id">
+          <span className="ios-widget-nome">${perfil.nome}</span>
+          <span className="ios-widget-cargo">${perfil.cargo}</span>
+        </span>
+      </span>
+      <span className="ios-widget-status"><span className="pulse"></span> ${perfil.status}</span>
+      <span className="ios-widget-rodape">${perfil.formacao}</span>
+    </button>`;
+}
+
+function TelaInicial({ abrirApp, abrirBusca, tema, alternarTema, recuada }) {
+  // cada item vira um ícone: os apps do sistema, o WhatsApp (link direto)
+  // e a troca de tema, que no iPhone mora na própria tela inicial
+  const item = (id) => {
+    if (id === 'whatsapp') {
+      return { id, nome: 'WhatsApp', icone: 'whatsapp', href: perfil.whatsappLink,
+               cor: 'linear-gradient(145deg,#5fe07f,#25a244)' };
+    }
+    const a = APPS[id];
+    return { id, nome: a.nome, icone: a.icone, cor: a.cor, onClick: () => abrirApp(id) };
+  };
+  const grade = [
+    ...IOS_GRADE.map(item),
+    { id: 'tema', nome: tema === 'dark' ? 'Tema claro' : 'Tema escuro',
+      icone: tema === 'dark' ? 'sun' : 'moon', onClick: alternarTema,
+      cor: 'linear-gradient(145deg,#96a0ad,#3c434c)' },
+  ];
+
+  return html`
+    <div className=${'ios-home' + (recuada ? ' recuada' : '')} aria-hidden=${recuada ? 'true' : undefined}>
+      <div className="ios-grade">
+        <${WidgetPerfil} onAbrir=${() => abrirApp('sobre')} />
+        ${grade.map((it) => html`<${IconeApp} key=${it.id} ...${it} />`)}
+      </div>
+
+      <button className="ios-busca" onClick=${abrirBusca}>
+        <${Ico.search} size=${13} /> Buscar
+      </button>
+
+      <nav className="ios-dock" aria-label="Dock">
+        ${IOS_DOCK.map((id) => html`<${IconeApp} key=${id} ...${item(id)} rotulo=${false} />`)}
+      </nav>
+    </div>`;
+}
+
+// A barrinha no pé da tela: tocar ou arrastar para cima volta ao início.
+// Durante o arrasto o app encolhe junto com o dedo, como no iOS; o
+// movimento vai direto no estilo, sem re-renderizar nada.
+function IndicadorInicio({ aoIrParaInicio, escuro }) {
+  const gesto = useRef(null);
+  const arrastou = useRef(false);   // o clique que vem depois de um arrasto não conta
+
+  const aoPressionar = (e) => {
+    const el = document.querySelector('.janela.focada:not(.oculta)');
+    e.currentTarget.setPointerCapture(e.pointerId);
+    gesto.current = { y: e.clientY, t: performance.now(), el, dy: 0 };
+    if (el) el.style.transition = 'none';
+  };
+  const aoMover = (e) => {
+    const g = gesto.current;
+    if (!g || !g.el) return;
+    g.dy = Math.max(0, g.y - e.clientY);
+    const escala = 1 - Math.min(g.dy / 700, 0.4);
+    g.el.style.transform = `translateY(${(-g.dy * 0.55).toFixed(1)}px) scale(${escala.toFixed(3)})`;
+    g.el.style.borderRadius = Math.min(g.dy / 3, 44) + 'px';
+  };
+  const aoSoltar = (e) => {
+    const g = gesto.current;
+    if (!g) return;
+    gesto.current = null;
+    arrastou.current = g.dy >= 6;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    const rapido = g.dy / Math.max(performance.now() - g.t, 1) > 0.5;
+    const el = g.el;
+    // Toque simples fica para o onClick: se a tela mudasse aqui, o clique
+    // que o navegador dispara logo depois cairia no app de baixo.
+    if (g.dy < 6) {
+      if (el) { el.style.transform = ''; el.style.borderRadius = ''; el.style.transition = ''; }
+      return;
+    }
+    // arrasto longo ou "piparote" rápido: vai para o início
+    if (g.dy > 90 || rapido) {
+      if (el) {
+        // a animação de fechar começa de onde o dedo deixou o app
+        el.style.setProperty('--arr-y', (-g.dy * 0.55).toFixed(1) + 'px');
+        el.style.setProperty('--arr-s', (1 - Math.min(g.dy / 700, 0.4)).toFixed(3));
+        el.style.transform = '';
+        el.style.borderRadius = '';
+        el.style.transition = '';
+        setTimeout(() => { el.style.removeProperty('--arr-y'); el.style.removeProperty('--arr-s'); }, 600);
+      }
+      aoIrParaInicio();
+    } else if (el) {
+      // não foi longe o bastante: o app volta para o lugar
+      el.style.transition = 'transform 0.32s cubic-bezier(0.2, 0.9, 0.25, 1), border-radius 0.32s';
+      el.style.transform = '';
+      el.style.borderRadius = '';
+      setTimeout(() => { el.style.transition = ''; }, 340);
+    }
+  };
+
+  return html`
+    <div className=${'ios-indicador' + (escuro ? ' sobre-escuro' : '')} role="button" aria-label="Ir para a tela inicial" tabIndex="0"
+         onPointerDown=${aoPressionar} onPointerMove=${aoMover}
+         onPointerUp=${aoSoltar} onPointerCancel=${aoSoltar} onClick=${() => !arrastou.current && aoIrParaInicio()}
+         onKeyDown=${(e) => (e.key === 'Enter' || e.key === ' ') && aoIrParaInicio()}>
+      <span></span>
+    </div>`;
+}
+
+/* ---------------------------------------------------------------
    Busca (Spotlight)
 --------------------------------------------------------------- */
-function Spotlight({ onFechar, abrirApp }) {
+function Spotlight({ onFechar, abrirApp, compacto }) {
   const [q, setQ] = useState('');
   const [sel, setSel] = useState(0);
   const campo = useRef(null);
@@ -595,10 +825,14 @@ function Spotlight({ onFechar, abrirApp }) {
     <div className="spot-backdrop" onClick=${onFechar}>
       <div className="spot" onClick=${(e) => e.stopPropagation()}>
         <div className="spot-input">
-          <${Ico.search} size=${20} />
-          <input ref=${campo} value=${q} placeholder="Buscar aplicativos, projetos, tecnologias..."
-                 onInput=${(e) => { setQ(e.target.value); setSel(0); }} onKeyDown=${aoTeclar}
-                 aria-label="Busca" />
+          <span className="spot-campo">
+            <${Ico.search} size=${compacto ? 16 : 20} />
+            <input ref=${campo} value=${q}
+                   placeholder=${compacto ? 'Buscar' : 'Buscar aplicativos, projetos, tecnologias...'}
+                   onInput=${(e) => { setQ(e.target.value); setSel(0); }} onKeyDown=${aoTeclar}
+                   aria-label="Busca" enterkeyhint="go" autocomplete="off" />
+          </span>
+          ${compacto && html`<button className="spot-cancelar" onClick=${onFechar}>Cancelar</button>`}
         </div>
         ${res.length === 0
           ? html`<p className="spot-vazio">Nada encontrado para "${q}"</p>`
@@ -637,7 +871,7 @@ function Sistema() {
       // sem o teste de "min", restaurar a janela mais alta não faria nada
       if (!alvo || (alvo.z === z.current && !alvo.min)) return atual;
       z.current += 1;
-      return atual.map((j) => (j.id === id ? { ...j, z: z.current, min: false } : j));
+      return atual.map((j) => (j.id === id ? { ...j, z: z.current, min: false, semAnimacao: false } : j));
     });
   }, []);
 
@@ -650,9 +884,15 @@ function Sistema() {
         ? atual.find((j) => j.app === appId && j.params.projeto?.id === params.projeto?.id)
         : atual.find((j) => j.app === appId);
 
+      // No iPhone, um app aberto enquanto outro está na tela entra por
+      // cima dele, pela direita, e o "‹ Voltar" leva de volta ao anterior.
+      const empilhada = atual.some((j) => !j.min && !j.fechando && j.id !== mesma?.id);
+
       z.current += 1;
       if (mesma) {
-        return atual.map((j) => (j.id === mesma.id ? { ...j, z: z.current, min: false, fechando: false } : j));
+        return atual.map((j) => (j.id === mesma.id
+          ? { ...j, z: z.current, min: false, fechando: false, semAnimacao: false, empilhada }
+          : j));
       }
 
       // largura/altura que cabem na tela, e posição em cascata
@@ -667,23 +907,37 @@ function Sistema() {
         params,
         x: Math.max(12, Math.round((window.innerWidth - w) / 2) - 90 + passo * 34),
         y: MENUBAR + 20 + passo * 28,
-        w, h, z: z.current, min: false, fechando: false,
+        w, h, z: z.current, min: false, fechando: false, empilhada,
       }];
     });
   }, []);
 
   const fechar = useCallback((id) => {
     setJanelas((atual) => atual.map((j) => (j.id === id ? { ...j, fechando: true } : j)));
-    setTimeout(() => setJanelas((atual) => atual.filter((j) => j.id !== id)), 200);
+    // se a janela for reaberta durante a animação, ela não é mais removida
+    setTimeout(() => setJanelas((atual) => atual.filter((j) => !(j.id === id && j.fechando))), 320);
   }, []);
 
   const minimizar = useCallback((id) => {
-    setJanelas((atual) => atual.map((j) => (j.id === id ? { ...j, min: !j.min } : j)));
+    setJanelas((atual) => atual.map((j) => (j.id === id ? { ...j, min: !j.min, semAnimacao: false } : j)));
   }, []);
 
   const fecharTudo = useCallback(() => {
     setJanelas((atual) => atual.map((j) => ({ ...j, fechando: true })));
-    setTimeout(() => setJanelas([]), 200);
+    setTimeout(() => setJanelas((atual) => atual.filter((j) => !j.fechando)), 320);
+  }, []);
+
+  // iPhone: volta à tela inicial. Os apps continuam abertos (minimizados),
+  // como no iOS; só o da frente anima de volta para o ícone.
+  const irParaInicio = useCallback(() => {
+    setJanelas((atual) => {
+      const frente = atual.filter((j) => !j.min && !j.fechando)
+        .reduce((a, j) => (!a || j.z > a.z ? j : a), null);
+      if (!frente) return atual;
+      return atual.map((j) => (j.min || j.fechando
+        ? j
+        : { ...j, min: true, semAnimacao: j.id !== frente.id }));
+    });
   }, []);
 
   // Organiza tudo em grade — útil quando várias janelas se sobrepõem.
@@ -733,14 +987,45 @@ function Sistema() {
   const topo = visiveis.reduce((a, j) => (!a || j.z > a.z ? j : a), null);
   frenteRef.current = topo && topo.id;
   const abertos = new Set(janelas.filter((j) => !j.fechando).map((j) => j.app));
-  const minimizadas = janelas.filter((j) => j.min && !j.fechando).map((j) => ({
-    id: j.id,
-    app: j.app,
-    titulo: j.params.projeto ? j.params.projeto.titulo : APPS[j.app].nome,
-  }));
+  const tituloDe = (j) => (j.params.projeto ? j.params.projeto.titulo : APPS[j.app].nome);
+  const minimizadas = janelas.filter((j) => j.min && !j.fechando)
+    .map((j) => ({ id: j.id, app: j.app, titulo: tituloDe(j) }));
 
-  // No celular só a janela do topo aparece, como um app em tela cheia.
+  // No iPhone só a janela do topo aparece, como um app em tela cheia.
   // As outras continuam montadas, só escondidas, para não perder o estado.
+  if (compacto) {
+    const pilha = [...visiveis].sort((a, b) => b.z - a.z);
+    const abaixo = pilha[1] || null;   // para onde o "‹ Voltar" leva
+    const voltar = () => (abaixo ? fechar(topo.id) : irParaInicio());
+
+    return html`
+      <${Fragment}>
+        <${BarraDeStatus} escuro=${!!(topo && APPS[topo.app].escuro)} />
+
+        <${TelaInicial} abrirApp=${abrirApp} abrirBusca=${() => setSpot(true)}
+                        tema=${tema} alternarTema=${alternarTema} recuada=${!!topo} />
+
+        ${janelas.map((j) => {
+          const naFrente = topo && topo.id === j.id;
+          // escondida: atrás do topo, ou indo para o início sem animação
+          const oculta = !naFrente && !j.fechando && !(j.min && !j.semAnimacao);
+          return html`
+            <${Janela} key=${j.id} janela=${j} tema=${tema} compacto=${true}
+                       focada=${naFrente} oculta=${oculta}
+                       aoFocar=${() => focar(j.id)}
+                       aoFechar=${() => fechar(j.id)}
+                       aoMinimizar=${() => minimizar(j.id)}
+                       voltarPara=${naFrente && abaixo ? tituloDe(abaixo) : null}
+                       aoVoltar=${voltar}
+                       abrirApp=${abrirApp} />`;
+        })}
+
+        ${topo && html`<${IndicadorInicio} aoIrParaInicio=${irParaInicio}
+                                           escuro=${!!APPS[topo.app].escuro} />`}
+
+        ${spot && html`<${Spotlight} compacto=${true} onFechar=${() => setSpot(false)} abrirApp=${abrirApp} />`}
+      <//>`;
+  }
 
   return html`
     <${Fragment}>
@@ -753,9 +1038,8 @@ function Sistema() {
       <${AreaDeTrabalho} abrirApp=${abrirApp} vazia=${visiveis.length === 0} />
 
       ${janelas.map((j) => html`
-        <${Janela} key=${j.id} janela=${j} tema=${tema} compacto=${compacto}
-                   focada=${topo && topo.id === j.id}
-                   oculta=${compacto && !(topo && topo.id === j.id)}
+        <${Janela} key=${j.id} janela=${j} tema=${tema} compacto=${false}
+                   focada=${topo && topo.id === j.id} oculta=${false}
                    aoFocar=${() => focar(j.id)}
                    aoFechar=${() => fechar(j.id)}
                    aoMinimizar=${() => minimizar(j.id)}

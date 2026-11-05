@@ -102,8 +102,33 @@ visitante, pelo Dock, pelos atalhos da mesa ou pela barra de menu.
 
 Como no macOS, a janela inativa fica com as luzes apagadas e o título esmaecido.
 
-Em telas pequenas não há sobreposição: cada janela ocupa a tela inteira, como
-um app de celular, e o Dock troca entre elas.
+### No celular: modo iPhone
+
+Em telas de até 820px de largura (ou até 520px de altura, celular deitado) a
+área de trabalho do macOS vira um **iPhone**:
+
+- **Barra de status** com hora, sinal, Wi-Fi e bateria
+- **Tela inicial** com um widget de perfil (abre o *Sobre mim*), a grade de
+  ícones e a pílula *Buscar*
+- **Dock** com Sobre mim, Projetos, Contato e WhatsApp (link direto)
+- **Apps em tela cheia** que crescem a partir do ícone e voltam para ele
+- **Barra de navegação** do iOS: "‹ Início" volta à tela inicial; um app aberto
+  de dentro de outro (um projeto, o LinkedIn pelo Contato) entra pela direita
+  e o botão mostra o nome do anterior
+- **Indicador de início** (a barrinha no pé da tela): tocar ou arrastar para
+  cima volta ao início, com o app encolhendo junto com o dedo
+- **Fotos**: deslizar para os lados troca a foto, para baixo fecha
+
+Os apps continuam abertos ao voltar para o início, como no iOS: o que foi
+digitado no Contato não se perde. A ordem dos ícones fica em `IOS_GRADE` e
+`IOS_DOCK`, no `script.js`.
+
+No iPhone a fonte passa a ser a do sistema (SF Pro), os campos de texto têm
+16px (abaixo disso o Safari dá zoom ao focar) e as margens respeitam o notch
+e a barra inferior (`viewport-fit=cover` + `env(safe-area-inset-*)`). Quem
+usar "Adicionar à Tela de Início" abre o portfólio em tela cheia, com o ícone
+`assets/apple-touch-icon.png`; nesse caso a barra de status e o indicador
+falsos somem, porque o próprio iOS já desenha os dele.
 
 ## Os aplicativos de perfil
 
@@ -122,21 +147,20 @@ ou a rede falhar, entra um cartão estático com o nome, o usuário e o link.
 
 ### LinkedIn
 
-Esta janela mostra **só o perfil do LinkedIn** — trajetória e competências já
-são o app "Sobre mim", então não se repetem aqui.
+O LinkedIn não tem API pública de perfil, e o badge oficial deles será
+descontinuado em 12/12/2026. Por isso a janela monta o perfil com os dados de
+`data.js`, no mesmo visual do site:
 
-Ela carrega o **badge oficial do LinkedIn**, com o perfil real e a foto. O
-badge não é um iframe apontando para o linkedin.com — isso o `X-Frame-Options`
-deles bloqueia. O script deles busca o HTML por JSONP e escreve num iframe
-local.
+- cabeçalho: `perfil.foto`, `nome`, `headline`, `localizacao`, `status`,
+  `empresa` e `instituicao`;
+- "Sobre": `perfil.resumoCurto`;
+- "Experiência": as etapas de `trajetoria`, da mais recente para a mais antiga
+  (a etapa `atual` mostra a `empresa`);
+- "Formação acadêmica": as etapas de `trajetoria` marcadas com `formacao: true`;
+- "Competências": todos os itens de `habilidades`.
 
-O badge **só aparece se o seu perfil estiver público** (LinkedIn →
-Configurações → Visibilidade → Editar perfil público e URL). Se depois de uns
-6 segundos ele não vier — perfil fechado, bloqueador de rastreadores ou rede
-sem acesso — entra no lugar um cartão estático com os mesmos campos que o
-badge mostraria.
-
-O `data-vanity` vem de `perfil.linkedinVanity`, em `data.js`.
+Quando algo mudar no LinkedIn, atualize esses campos. O botão "Abrir perfil
+completo" leva a `perfil.linkedin`.
 
 ## Como rodar localmente
 
@@ -156,8 +180,8 @@ simples, sem build. O `portifolio.json` guarda a regra de rewrite.
 Nada é baixado de outro domínio na carga da página: a interface usa
 [Preact](https://preactjs.com) (a mesma API do React em ~4 KB) com
 [htm](https://github.com/developit/htm), ambos em `vendor/`, e as fontes
-ficam em `assets/fontes/`. Só os apps GitHub e LinkedIn acessam a internet,
-e só quando são abertos.
+ficam em `assets/fontes/`. Só o app GitHub acessa a internet,
+e só quando é aberto.
 
 O `<script type="importmap">` do `index.html` liga os nomes curtos usados nos
 `import` (`'preact'`, `'preact/hooks'`, `'htm'`) aos arquivos de `vendor/`.
@@ -182,8 +206,8 @@ Os componentes são escritos igual, com duas pegadinhas:
 - O conteúdo de cada janela só é reconstruído quando o tema ou os dados dela
   mudam — mover ou focar a janela não toca no app.
 - Janelas minimizadas, ou escondidas atrás da do topo no celular, continuam
-  montadas: o que foi digitado no Contato não se perde, e GitHub e LinkedIn
-  não buscam tudo de novo.
+  montadas: o que foi digitado no Contato não se perde, e o GitHub
+  não busca tudo de novo.
 - O app GitHub guarda a resposta por 10 minutos na aba (`sessionStorage`),
   poupando o limite de 60 requisições por hora.
 - As manchas do papel de parede são gradientes radiais, não `filter: blur()`,
